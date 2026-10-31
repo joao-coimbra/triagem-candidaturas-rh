@@ -52,12 +52,12 @@
         "base": {
           "__rl": true,
           "mode": "id",
-          "value": "={{ $env.AIRTABLE_BASE_ID || 'SUBSTITUA_BASE_ID' }}"
+          "value": "={{ $env.AIRTABLE_BASE_ID || 'app32RqD9lvG8Sb0J' }}"
         },
         "table": {
           "__rl": true,
           "mode": "id",
-          "value": "tblbzeyF946ZBbVSJ"
+          "value": "={{ $env.AIRTABLE_TABLE_ID || 'tblbzeyF946ZBbVSJ' }}"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -182,7 +182,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const ctx = $('Contexto Candidato').item.json;\nconst raw = $input.first().json;\n\nlet score = null;\nlet classification = 'Medium';\nlet reason = '';\nlet skills = [];\nlet nextStep = 'Revisão manual';\nlet iaOk = true;\nlet erroDetalhe = '';\n\ntry {\n  if (raw.error || raw.message?.includes?.('Error')) {\n    throw new Error(JSON.stringify(raw.error || raw.message || raw));\n  }\n  const text =\n    raw.candidates?.[0]?.content?.parts?.[0]?.text ??\n    raw.text ??\n    null;\n  if (!text) throw new Error('Empty Gemini response');\n  const cleaned = String(text).replace(/```json/gi, '').replace(/```/g, '').trim();\n  const parsed = JSON.parse(cleaned);\n  score = Number(parsed.score);\n  classification = parsed.classification || 'Medium';\n  reason = parsed.reason || '';\n  skills = parsed.skills || [];\n  nextStep = parsed.next_step || nextStep;\n  if (Number.isNaN(score)) throw new Error('Invalid score');\n} catch (e) {\n  iaOk = false;\n  erroDetalhe = String(e.message || e);\n  score = null;\n  classification = 'Medium';\n  reason = 'Falha da IA — encaminhado para revisão humana';\n  nextStep = 'Revisão manual HITL';\n}\n\nconst scoreHitlMin = Number($env.SCORE_HITL_MINIMO || 50);\nconst precisaHitl = !iaOk || (score !== null && score >= scoreHitlMin);\n\nconst baseId = String($env.AIRTABLE_BASE_ID || 'app32RqD9lvG8Sb0J');\nconst tableId = String($env.AIRTABLE_TABLE_ID || 'tblbzeyF946ZBbVSJ');\nconst recordId = String(ctx.airtable_id || ctx.id || '');\nconst recordUrl = 'https://airtable.com/' + baseId + '/' + tableId + '/' + recordId;\nconst webhookBase = String($env.WEBHOOK_URL || 'http://localhost:5678/').replace(/\\/$/, '');\nconst approveUrl = webhookBase + '/webhook/hitl-decisao?recordId=' + encodeURIComponent(recordId) + '&decision=approve';\nconst rejectUrl = webhookBase + '/webhook/hitl-decisao?recordId=' + encodeURIComponent(recordId) + '&decision=reject';\n\nreturn [{\n  json: {\n    ...ctx,\n    record_url: recordUrl,\n    approve_url: approveUrl,\n    reject_url: rejectUrl,\n    score,\n    classification,\n    motivo_ia: reason,\n    ai_reason: reason,\n    skills_extraidas: Array.isArray(skills) ? skills.join(', ') : String(skills),\n    extracted_skills: Array.isArray(skills) ? skills.join(', ') : String(skills),\n    proximo_passo_sugerido: nextStep,\n    suggested_next_step: nextStep,\n    ia_ok: iaOk,\n    erro_detalhe: erroDetalhe,\n    precisa_hitl: precisaHitl,\n    score_hitl_minimo: scoreHitlMin\n  }\n}];\n"
+        "jsCode": "const ctx = $('Contexto Candidato').item.json;\nconst raw = $input.first().json;\n\nlet score = null;\nlet classification = 'Medium';\nlet reason = '';\nlet skills = [];\nlet nextStep = 'Revisão manual';\nlet iaOk = true;\nlet erroDetalhe = '';\n\ntry {\n  if (raw.error || raw.message?.includes?.('Error')) {\n    throw new Error(JSON.stringify(raw.error || raw.message || raw));\n  }\n  const text =\n    raw.candidates?.[0]?.content?.parts?.[0]?.text ??\n    raw.text ??\n    null;\n  if (!text) throw new Error('Empty Gemini response');\n  const cleaned = String(text).replace(/```json/gi, '').replace(/```/g, '').trim();\n  const parsed = JSON.parse(cleaned);\n  score = Number(parsed.score);\n  classification = parsed.classification || 'Medium';\n  reason = parsed.reason || '';\n  skills = parsed.skills || [];\n  nextStep = parsed.next_step || nextStep;\n  if (Number.isNaN(score)) throw new Error('Invalid score');\n} catch (e) {\n  iaOk = false;\n  erroDetalhe = String(e.message || e);\n  score = null;\n  classification = 'Medium';\n  reason = 'Falha da IA - encaminhado para revisão humana';\n  nextStep = 'Revisão manual HITL';\n}\n\nconst scoreHitlMin = Number($env.SCORE_HITL_MINIMO || 50);\nconst precisaHitl = !iaOk || (score !== null && score >= scoreHitlMin);\n\nconst baseId = String($env.AIRTABLE_BASE_ID || 'app32RqD9lvG8Sb0J');\nconst tableId = String($env.AIRTABLE_TABLE_ID || 'tblbzeyF946ZBbVSJ');\nconst recordId = String(ctx.airtable_id || ctx.id || '');\nconst recordUrl = 'https://airtable.com/' + baseId + '/' + tableId + '/' + recordId;\nconst webhookBase = String($env.WEBHOOK_URL || 'http://localhost:5678/').replace(/\\/$/, '');\nconst approveUrl = webhookBase + '/webhook/hitl-decisao?recordId=' + encodeURIComponent(recordId) + '&decision=approve';\nconst rejectUrl = webhookBase + '/webhook/hitl-decisao?recordId=' + encodeURIComponent(recordId) + '&decision=reject';\n\nreturn [{\n  json: {\n    ...ctx,\n    record_url: recordUrl,\n    approve_url: approveUrl,\n    reject_url: rejectUrl,\n    score,\n    classification,\n    motivo_ia: reason,\n    ai_reason: reason,\n    skills_extraidas: Array.isArray(skills) ? skills.join(', ') : String(skills),\n    extracted_skills: Array.isArray(skills) ? skills.join(', ') : String(skills),\n    proximo_passo_sugerido: nextStep,\n    suggested_next_step: nextStep,\n    ia_ok: iaOk,\n    erro_detalhe: erroDetalhe,\n    precisa_hitl: precisaHitl,\n    score_hitl_minimo: scoreHitlMin\n  }\n}];\n"
       },
       "id": "code-parse-001",
       "name": "Parse Resultado IA",
@@ -199,12 +199,12 @@
         "base": {
           "__rl": true,
           "mode": "id",
-          "value": "={{ $env.AIRTABLE_BASE_ID || 'SUBSTITUA_BASE_ID' }}"
+          "value": "={{ $env.AIRTABLE_BASE_ID || 'app32RqD9lvG8Sb0J' }}"
         },
         "table": {
           "__rl": true,
           "mode": "id",
-          "value": "tblbzeyF946ZBbVSJ"
+          "value": "={{ $env.AIRTABLE_TABLE_ID || 'tblbzeyF946ZBbVSJ' }}"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -278,12 +278,12 @@
         "base": {
           "__rl": true,
           "mode": "id",
-          "value": "={{ $env.AIRTABLE_BASE_ID || 'SUBSTITUA_BASE_ID' }}"
+          "value": "={{ $env.AIRTABLE_BASE_ID || 'app32RqD9lvG8Sb0J' }}"
         },
         "table": {
           "__rl": true,
           "mode": "id",
-          "value": "tblbzeyF946ZBbVSJ"
+          "value": "={{ $env.AIRTABLE_TABLE_ID || 'tblbzeyF946ZBbVSJ' }}"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -321,7 +321,7 @@
           "mode": "name",
           "value": "={{ $env.SLACK_CHANNEL_RECRUTAMENTO || '#rh-triagem' }}"
         },
-        "text": "=Triagem RH — Human-in-the-Loop\n*Candidato:* {{ $('Parse Resultado IA').item.json.nome }}\n*Vaga:* {{ $('Parse Resultado IA').item.json.vaga }}\n*Score IA:* {{ $('Parse Resultado IA').item.json.score ?? 'N/A' }} ({{ $('Parse Resultado IA').item.json.classification }})\n*Motivo:* {{ $('Parse Resultado IA').item.json.ai_reason }}\n*Competências:* {{ $('Parse Resultado IA').item.json.extracted_skills }}\n*Airtable:* {{ $('Parse Resultado IA').item.json.record_url }}\n\nClique em *Aprovar* ou *Reprovar* abaixo (não precisa abrir o n8n).\n<{{ $('Parse Resultado IA').item.json.approve_url }}|Aprovar>   <{{ $('Parse Resultado IA').item.json.reject_url }}|Reprovar>",
+        "text": "=Triagem RH - Human-in-the-Loop\n*Candidato:* {{ $('Parse Resultado IA').item.json.nome }}\n*Vaga:* {{ $('Parse Resultado IA').item.json.vaga }}\n*Score IA:* {{ $('Parse Resultado IA').item.json.score ?? 'N/A' }} ({{ $('Parse Resultado IA').item.json.classification }})\n*Motivo:* {{ $('Parse Resultado IA').item.json.ai_reason }}\n*Competências:* {{ $('Parse Resultado IA').item.json.extracted_skills }}\n*Airtable:* {{ $('Parse Resultado IA').item.json.record_url }}\n\nClique em *Aprovar* ou *Reprovar* abaixo (não precisa abrir o n8n).\n<{{ $('Parse Resultado IA').item.json.approve_url }}|Aprovar>   <{{ $('Parse Resultado IA').item.json.reject_url }}|Reprovar>",
         "otherOptions": {}
       },
       "id": "slack-msg-001",
@@ -341,7 +341,7 @@
     },
     {
       "parameters": {
-        "content": "## Triagem RH — HITL via Slack\n1. Slack avisa candidatos que precisam de revisão.\n2. RH clica em **Aprovar** ou **Reprovar** no próprio Slack (links usam `WEBHOOK_URL` + `/webhook/hitl-decisao`).\n3. O webhook atualiza o Airtable e, se aprovado, envia o Gmail.\n4. A execução de triagem termina após o Slack (sem Wait).\n\nConfigure: Airtable, Slack, Gmail, `GEMINI_API_KEY`, `WEBHOOK_URL`.",
+        "content": "## Triagem RH - HITL via Slack\n1. Slack avisa candidatos que precisam de revisão.\n2. RH clica em **Aprovar** ou **Reprovar** no próprio Slack (links usam `WEBHOOK_URL` + `/webhook/hitl-decisao`).\n3. O webhook atualiza o Airtable e, se aprovado, envia o Gmail.\n4. A execução de triagem termina após o Slack (sem Wait).\n\nConfigure: Airtable, Slack, Gmail, `GEMINI_API_KEY`, `WEBHOOK_URL`.",
         "height": 360,
         "width": 420
       },
@@ -447,12 +447,12 @@
         "base": {
           "__rl": true,
           "mode": "id",
-          "value": "={{ $env.AIRTABLE_BASE_ID || 'SUBSTITUA_BASE_ID' }}"
+          "value": "={{ $env.AIRTABLE_BASE_ID || 'app32RqD9lvG8Sb0J' }}"
         },
         "table": {
           "__rl": true,
           "mode": "id",
-          "value": "tblbzeyF946ZBbVSJ"
+          "value": "={{ $env.AIRTABLE_TABLE_ID || 'tblbzeyF946ZBbVSJ' }}"
         },
         "id": "={{ $json.recordId }}"
       },
@@ -547,12 +547,12 @@
         "base": {
           "__rl": true,
           "mode": "id",
-          "value": "={{ $env.AIRTABLE_BASE_ID || 'SUBSTITUA_BASE_ID' }}"
+          "value": "={{ $env.AIRTABLE_BASE_ID || 'app32RqD9lvG8Sb0J' }}"
         },
         "table": {
           "__rl": true,
           "mode": "id",
-          "value": "tblbzeyF946ZBbVSJ"
+          "value": "={{ $env.AIRTABLE_TABLE_ID || 'tblbzeyF946ZBbVSJ' }}"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -612,12 +612,12 @@
         "base": {
           "__rl": true,
           "mode": "id",
-          "value": "={{ $env.AIRTABLE_BASE_ID || 'SUBSTITUA_BASE_ID' }}"
+          "value": "={{ $env.AIRTABLE_BASE_ID || 'app32RqD9lvG8Sb0J' }}"
         },
         "table": {
           "__rl": true,
           "mode": "id",
-          "value": "tblbzeyF946ZBbVSJ"
+          "value": "={{ $env.AIRTABLE_TABLE_ID || 'tblbzeyF946ZBbVSJ' }}"
         },
         "columns": {
           "mappingMode": "defineBelow",

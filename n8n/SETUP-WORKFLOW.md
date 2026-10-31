@@ -10,11 +10,12 @@
 No Docker / host, defina pelo menos:
 - `GEMINI_API_KEY`
 - `AIRTABLE_BASE_ID`
+- `AIRTABLE_TABLE_ID` (id da tabela Candidates; o workflow usa `$env.AIRTABLE_TABLE_ID`)
 - `SLACK_CHANNEL_RECRUTAMENTO` (ex.: `#rh-triagem`)
 - `GEMINI_MODEL` (default `gemini-2.5-flash`)
 - `SCORE_HITL_MINIMO` (default `50`)
-- `WEBHOOK_URL` (URL pública se usar tunnel)
-- `N8N_BLOCK_ENV_ACCESS_IN_NODE=false` (necessário para `$env.AIRTABLE_BASE_ID` / Gemini no workflow)
+- `WEBHOOK_URL` (URL pública se usar tunnel; também base dos links Aprovar/Reprovar)
+- `N8N_BLOCK_ENV_ACCESS_IN_NODE=false` (necessário para `$env.AIRTABLE_*` / Gemini no workflow)
 
 No n8n: **Settings → Variables** ou env do container.
 
