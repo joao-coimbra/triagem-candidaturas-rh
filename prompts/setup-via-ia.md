@@ -52,6 +52,6 @@ Passos obrigatórios:
 ## Depois que o agente terminar
 
 1. Complete as contas/chaves que ele listou.
-2. Rode T1 e salve os prints nos caminhos do README (`docs/print-*.png`) para a parte teórica.
+2. Rode T1 e salve os prints nos caminhos do README (`docs/images/print-*.png`) para a parte teórica.
 3. No Slack, use os links **Aprovar** / **Reprovar** (webhook `hitl-decisao`). Não há Wait nem resume URL no n8n.
 

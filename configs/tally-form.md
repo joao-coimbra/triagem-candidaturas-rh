@@ -29,5 +29,5 @@ Capturar a candidatura e disparar o webhook do n8n.
 
 ## Validação pelo professor
 - Link público do form no README / vídeo
-- Print da aba Integrations com o webhook configurado (`docs/print-tally-webhook.png`)
+- Print da aba Integrations com o webhook configurado (`docs/images/print-tally-webhook.png`)
 - Submissão de teste durante a demo

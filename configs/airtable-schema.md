@@ -33,4 +33,4 @@ Create an Airtable base named **HR Screening** with the table below.
 - **Errors:** Status = `Error`
 
 ## Sharing
-Share the base as **read-only** or drop the screenshot in the README (`docs/print-airtable-candidato.png`).
+Share the base as **read-only** or drop the screenshot in the README (`docs/images/print-airtable-candidato.png`).

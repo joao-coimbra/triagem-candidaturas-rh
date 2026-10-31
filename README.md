@@ -56,7 +56,7 @@ Limiar padrão: score abaixo de 50 vai para `Auto_Rejected`. Score 50 ou mais (o
 | `n8n/SETUP-WORKFLOW.md` | Credenciais, túnel, webhook e HITL |
 | `configs/` | Schema Airtable, form Tally e prompt Gemini |
 | `docs/test-cvs/` | CVs de exemplo (forte / fraco) para a demo |
-| `docs/print-*.png` | Prints de evidência |
+| `docs/images/print-*.png` | Prints de evidência |
 | `docs/Arquitetura-Triagem-RH.pdf` | Parte teórica da entrega |
 
 ## ✅ Pré-requisitos
@@ -88,7 +88,7 @@ Abra `http://localhost:5678`, importe `n8n/triagem-candidaturas.json` e religue 
 
 1. Base: [`configs/airtable-schema.md`](configs/airtable-schema.md)
 2. Form: [`configs/tally-form.md`](configs/tally-form.md)
-3. No ambiente / n8n: `AIRTABLE_BASE_ID`, `GEMINI_API_KEY`, `SLACK_CHANNEL_RECRUTAMENTO` (e opcionalmente `SCORE_HITL_MINIMO`, `GEMINI_MODEL`)
+3. No ambiente / n8n: `AIRTABLE_BASE_ID`, `AIRTABLE_TABLE_ID`, `GEMINI_API_KEY`, `SLACK_CHANNEL_RECRUTAMENTO` (e opcionalmente `SCORE_HITL_MINIMO`, `GEMINI_MODEL`)
 
 ### 3. Túnel e webhook
 
@@ -112,19 +112,19 @@ Quando o score fica alto (ou a IA falha), o n8n posta no Slack e **encerra** aqu
 
 ## 🖼 Evidências
 
-![Form Tally](docs/print-tally-form.png)
+![Form Tally](docs/images/print-tally-form.png)
 
-![Webhook Tally / n8n](docs/print-tally-webhook.png)
+![Webhook Tally / n8n](docs/images/print-tally-webhook.png)
 
-![Workflow n8n](docs/print-n8n-workflow.png)
+![Workflow n8n](docs/images/print-n8n-workflow.png)
 
-![Execução no n8n](docs/print-n8n-execucao.png)
+![Execução no n8n](docs/images/print-n8n-execucao.png)
 
-![Registro no Airtable](docs/print-airtable-candidato.png)
+![Registro no Airtable](docs/images/print-airtable-candidato.png)
 
-![HITL no Slack](docs/print-slack-hitl.png)
+![HITL no Slack](docs/images/print-slack-hitl.png)
 
-![Convite Gmail](docs/print-gmail-convite.png)
+![Convite Gmail](docs/images/print-gmail-convite.png)
 
 ## 📚 Extra
 
