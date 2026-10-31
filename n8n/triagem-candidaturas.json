@@ -1,0 +1,915 @@
+{
+  "name": "Triagem Inteligente Candidaturas RH",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "tally-candidatura",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "wh-tally-001",
+      "name": "Webhook Tally",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        300
+      ],
+      "webhookId": "tally-candidatura"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normaliza payload do Tally (webhook FORM_RESPONSE)\nconst body = $input.first().json.body ?? $input.first().json;\nconst data = body.data ?? body;\nconst fields = data.fields ?? [];\n\nconst JOBS = [\n  'Full Stack Developer',\n  'Data Analyst',\n  'HR Assistant',\n  'Product Designer',\n];\n\nfunction resolveOption(field, raw) {\n  if (raw == null) return null;\n  if (typeof raw === 'object') {\n    return raw.text ?? raw.label ?? raw.name ?? raw.value ?? null;\n  }\n  const s = String(raw);\n  const opts = field.options || field.fieldOptions || [];\n  const hit = opts.find((o) => o.id === s || o.uuid === s || o.value === s || o.text === s);\n  if (hit) return hit.text ?? hit.label ?? hit.name ?? hit.value ?? s;\n  if (/^[0-9a-f-]{36}$/i.test(s)) return null;\n  return s;\n}\n\nfunction fieldRaw(labelOrKey) {\n  return fields.find(\n    (x) =>\n      (x.label && String(x.label).toLowerCase() === String(labelOrKey).toLowerCase()) ||\n      x.key === labelOrKey ||\n      (x.title && String(x.title).toLowerCase() === String(labelOrKey).toLowerCase())\n  );\n}\n\nfunction fieldValue(labelOrKey) {\n  const f = fieldRaw(labelOrKey);\n  if (!f) return null;\n  if (Array.isArray(f.value)) {\n    if (f.value[0]?.url) return f.value;\n    return f.value\n      .map((v) => resolveOption(f, v))\n      .filter((x) => x != null && x !== '')\n      .join(', ');\n  }\n  return resolveOption(f, f.value);\n}\n\nfunction extractResume(files) {\n  const out = [];\n  const arr = Array.isArray(files) ? files : files ? [files] : [];\n  for (const f of arr) {\n    if (!f) continue;\n    if (typeof f === 'string' && f.startsWith('http')) {\n      out.push({ url: f, filename: 'curriculo.pdf' });\n      continue;\n    }\n    const url = f.url || f.downloadUrl || f.href;\n    if (!url) continue;\n    const filename =\n      f.name ||\n      f.filename ||\n      f.originalName ||\n      String(url).split('?')[0].split('/').pop() ||\n      'curriculo.pdf';\n    out.push({ url, filename });\n  }\n  return out;\n}\n\nconst nome = fieldValue('Nome completo') ?? fieldValue('Nome') ?? data.nome ?? 'Sem nome';\nconst email = fieldValue('E-mail') ?? fieldValue('Email') ?? data.email ?? '';\nlet vaga = fieldValue('Vaga de interesse') ?? fieldValue('Vaga') ?? data.vaga ?? '';\nif (!vaga || /^[0-9a-f-]{36}$/i.test(String(vaga))) {\n  vaga = JOBS.includes(String(vaga)) ? vaga : 'Full Stack Developer';\n}\nif (!JOBS.includes(vaga)) {\n  const approx = JOBS.find((j) => String(vaga).toLowerCase().includes(j.toLowerCase().split(' ')[0]));\n  vaga = approx || 'Full Stack Developer';\n}\nconst linkedin = fieldValue('LinkedIn') ?? '';\nconst resumo = fieldValue('Conte um pouco da sua experiência') ?? fieldValue('Resumo') ?? '';\nconst curriculoRaw = fieldValue('Currículo (PDF)') ?? fieldValue('Currículo') ?? [];\nconst resume = extractResume(curriculoRaw);\n\nconst submissionId = data.responseId ?? data.submissionId ?? body.eventId ?? $execution.id;\n\nreturn [{\n  json: {\n    nome,\n    email,\n    vaga,\n    linkedin,\n    resumo,\n    curriculo: curriculoRaw,\n    resume,\n    resume_url: resume[0]?.url || '',\n    resume_filename: resume[0]?.filename || 'curriculo.pdf',\n    tally_submission_id: String(submissionId),\n    status_inicial: 'Under_Review',\n    recebido_em: new Date().toISOString()\n  }\n}];\n"
+      },
+      "id": "code-norm-001",
+      "name": "Normalizar Tally",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"ok\": true, \"message\": \"Candidatura recebida\", \"submissionId\": $json.tally_submission_id } }}",
+        "options": {}
+      },
+      "id": "wh-resp-001",
+      "name": "Responder Tally",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.AIRTABLE_BASE_ID || 'SUBSTITUA_BASE_ID' }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblbzeyF946ZBbVSJ"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $json.nome }}",
+            "Email": "={{ $json.email }}",
+            "Job": "={{ $json.vaga }}",
+            "LinkedIn": "={{ $json.linkedin }}",
+            "Summary": "={{ $json.resumo }}",
+            "Status": "Under_Review",
+            "Tally_Submission_Id": "={{ $json.tally_submission_id }}",
+            "Human_Decision": "Pending",
+            "Resume": "={{ $json.resume && $json.resume.length ? $json.resume : ($json.resume_url ? [{ url: $json.resume_url, filename: $json.resume_filename || 'curriculo.pdf' }] : undefined) }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "air-create-001",
+      "name": "Airtable Criar Candidato",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        480,
+        300
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "CREDENTIAL_AIRTABLE",
+          "name": "Airtable PAT"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "airtable_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "record_url",
+              "value": "={{ 'https://airtable.com/' + String($env.AIRTABLE_BASE_ID || 'app32RqD9lvG8Sb0J') + '/' + String($env.AIRTABLE_TABLE_ID || 'tblbzeyF946ZBbVSJ') + '/' + String($json.id) }}",
+              "type": "string"
+            },
+            {
+              "id": "a3",
+              "name": "nome",
+              "value": "={{ $('Normalizar Tally').item.json.nome }}",
+              "type": "string"
+            },
+            {
+              "id": "a4",
+              "name": "email",
+              "value": "={{ $('Normalizar Tally').item.json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "a5",
+              "name": "vaga",
+              "value": "={{ $('Normalizar Tally').item.json.vaga }}",
+              "type": "string"
+            },
+            {
+              "id": "a6",
+              "name": "resumo",
+              "value": "={{ $('Normalizar Tally').item.json.resumo }}",
+              "type": "string"
+            },
+            {
+              "id": "a7",
+              "name": "linkedin",
+              "value": "={{ $('Normalizar Tally').item.json.linkedin }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-ctx-001",
+      "name": "Contexto Candidato",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        720,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/{{ $env.GEMINI_MODEL || 'gemini-2.5-flash' }}:generateContent",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{ $env.GEMINI_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'You are an HR screening assistant. Score how well the candidate fits the job.\\n\\n' + 'Job: ' + String($json.vaga || '') + '\\n' + 'Name: ' + String($json.nome || '') + '\\n' + 'LinkedIn: ' + String($json.linkedin || '') + '\\n' + 'Experience/summary:\\n' + String($json.resumo || '') + '\\n\\n' + 'Respond with ONLY valid JSON (no markdown), English keys, in this shape:\\n' + '{\\\"score\\\": number 0-100, \\\"classification\\\": \\\"High\\\"|\\\"Medium\\\"|\\\"Low\\\", \\\"reason\\\": string, \\\"skills\\\": string[], \\\"next_step\\\": string}\\n' + 'Write reason and next_step in Brazilian Portuguese. Keep classification exactly as High, Medium or Low. Criteria: relevant experience, clarity, apparent seniority, alignment with the job title.' }] }], generationConfig: { temperature: 0.2, responseMimeType: 'application/json' } }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "http-gemini-001",
+      "name": "Gemini Classificar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        300
+      ],
+      "onError": "continueRegularOutput",
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $('Contexto Candidato').item.json;\nconst raw = $input.first().json;\n\nlet score = null;\nlet classification = 'Medium';\nlet reason = '';\nlet skills = [];\nlet nextStep = 'Revisão manual';\nlet iaOk = true;\nlet erroDetalhe = '';\n\ntry {\n  if (raw.error || raw.message?.includes?.('Error')) {\n    throw new Error(JSON.stringify(raw.error || raw.message || raw));\n  }\n  const text =\n    raw.candidates?.[0]?.content?.parts?.[0]?.text ??\n    raw.text ??\n    null;\n  if (!text) throw new Error('Empty Gemini response');\n  const cleaned = String(text).replace(/```json/gi, '').replace(/```/g, '').trim();\n  const parsed = JSON.parse(cleaned);\n  score = Number(parsed.score);\n  classification = parsed.classification || 'Medium';\n  reason = parsed.reason || '';\n  skills = parsed.skills || [];\n  nextStep = parsed.next_step || nextStep;\n  if (Number.isNaN(score)) throw new Error('Invalid score');\n} catch (e) {\n  iaOk = false;\n  erroDetalhe = String(e.message || e);\n  score = null;\n  classification = 'Medium';\n  reason = 'Falha da IA — encaminhado para revisão humana';\n  nextStep = 'Revisão manual HITL';\n}\n\nconst scoreHitlMin = Number($env.SCORE_HITL_MINIMO || 50);\nconst precisaHitl = !iaOk || (score !== null && score >= scoreHitlMin);\n\nconst baseId = String($env.AIRTABLE_BASE_ID || 'app32RqD9lvG8Sb0J');\nconst tableId = String($env.AIRTABLE_TABLE_ID || 'tblbzeyF946ZBbVSJ');\nconst recordId = String(ctx.airtable_id || ctx.id || '');\nconst recordUrl = 'https://airtable.com/' + baseId + '/' + tableId + '/' + recordId;\nconst webhookBase = String($env.WEBHOOK_URL || 'http://localhost:5678/').replace(/\\/$/, '');\nconst approveUrl = webhookBase + '/webhook/hitl-decisao?recordId=' + encodeURIComponent(recordId) + '&decision=approve';\nconst rejectUrl = webhookBase + '/webhook/hitl-decisao?recordId=' + encodeURIComponent(recordId) + '&decision=reject';\n\nreturn [{\n  json: {\n    ...ctx,\n    record_url: recordUrl,\n    approve_url: approveUrl,\n    reject_url: rejectUrl,\n    score,\n    classification,\n    motivo_ia: reason,\n    ai_reason: reason,\n    skills_extraidas: Array.isArray(skills) ? skills.join(', ') : String(skills),\n    extracted_skills: Array.isArray(skills) ? skills.join(', ') : String(skills),\n    proximo_passo_sugerido: nextStep,\n    suggested_next_step: nextStep,\n    ia_ok: iaOk,\n    erro_detalhe: erroDetalhe,\n    precisa_hitl: precisaHitl,\n    score_hitl_minimo: scoreHitlMin\n  }\n}];\n"
+      },
+      "id": "code-parse-001",
+      "name": "Parse Resultado IA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.AIRTABLE_BASE_ID || 'SUBSTITUA_BASE_ID' }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblbzeyF946ZBbVSJ"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.airtable_id }}",
+            "Score": "={{ ($json.score === null || $json.score === undefined || $json.score === '') ? undefined : $json.score }}",
+            "Classification": "={{ $json.classification }}",
+            "AI_Reason": "={{ $json.ai_reason }}",
+            "Extracted_Skills": "={{ $json.extracted_skills }}",
+            "Suggested_Next_Step": "={{ $json.suggested_next_step }}",
+            "Status": "={{ $json.ia_ok ? ($json.precisa_hitl ? 'Awaiting_HITL' : 'Auto_Rejected') : 'Error' }}",
+            "Error_Detail": "={{ $json.erro_detalhe }}",
+            "Record_URL": "={{ $json.record_url }}"
+          },
+          "matchingColumns": [
+            "id"
+          ]
+        },
+        "options": {}
+      },
+      "id": "air-upd-ia-001",
+      "name": "Airtable Atualizar IA",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1440,
+        300
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "CREDENTIAL_AIRTABLE",
+          "name": "Airtable PAT"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "c-hitl",
+              "leftValue": "={{ $('Parse Resultado IA').item.json.precisa_hitl }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-hitl-001",
+      "name": "IF Precisa HITL",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.AIRTABLE_BASE_ID || 'SUBSTITUA_BASE_ID' }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblbzeyF946ZBbVSJ"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Parse Resultado IA').item.json.airtable_id }}",
+            "Status": "Auto_Rejected",
+            "Human_Decision": "Pending"
+          },
+          "matchingColumns": [
+            "id"
+          ]
+        },
+        "options": {}
+      },
+      "id": "air-rej-auto-001",
+      "name": "Airtable Rejeicao Automatica",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1920,
+        480
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "CREDENTIAL_AIRTABLE",
+          "name": "Airtable PAT"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $env.SLACK_CHANNEL_RECRUTAMENTO || '#rh-triagem' }}"
+        },
+        "text": "=Triagem RH — Human-in-the-Loop\n*Candidato:* {{ $('Parse Resultado IA').item.json.nome }}\n*Vaga:* {{ $('Parse Resultado IA').item.json.vaga }}\n*Score IA:* {{ $('Parse Resultado IA').item.json.score ?? 'N/A' }} ({{ $('Parse Resultado IA').item.json.classification }})\n*Motivo:* {{ $('Parse Resultado IA').item.json.ai_reason }}\n*Competências:* {{ $('Parse Resultado IA').item.json.extracted_skills }}\n*Airtable:* {{ $('Parse Resultado IA').item.json.record_url }}\n\nClique em *Aprovar* ou *Reprovar* abaixo (não precisa abrir o n8n).\n<{{ $('Parse Resultado IA').item.json.approve_url }}|Aprovar>   <{{ $('Parse Resultado IA').item.json.reject_url }}|Reprovar>",
+        "otherOptions": {}
+      },
+      "id": "slack-msg-001",
+      "name": "Slack Notificar HITL",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1920,
+        200
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "CREDENTIAL_SLACK",
+          "name": "Slack Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Triagem RH — HITL via Slack\n1. Slack avisa candidatos que precisam de revisão.\n2. RH clica em **Aprovar** ou **Reprovar** no próprio Slack (links usam `WEBHOOK_URL` + `/webhook/hitl-decisao`).\n3. O webhook atualiza o Airtable e, se aprovado, envia o Gmail.\n4. A execução de triagem termina após o Slack (sem Wait).\n\nConfigure: Airtable, Slack, Gmail, `GEMINI_API_KEY`, `WEBHOOK_URL`.",
+        "height": 360,
+        "width": 420
+      },
+      "id": "note-001",
+      "name": "Nota HITL",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        -40
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "hitl-decisao",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "wh-hitl-001",
+      "name": "Webhook HITL Decisao",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        780
+      ],
+      "webhookId": "hitl-decisao"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst q = input.query ?? {};\nconst body = input.body ?? {};\nconst recordId = String(\n  q.recordId || q.record_id || body.recordId || body.record_id || input.recordId || ''\n).trim();\nconst decision = String(\n  q.decision || body.decision || input.decision || ''\n).toLowerCase().trim();\n\nconst aprovado = ['approve', 'aprovado', 'approved'].includes(decision);\nconst reprovado = ['reject', 'reprovado', 'rejected'].includes(decision);\n\nif (!recordId) {\n  return [{ json: { ok: false, error: 'recordId obrigatório', recordId: '', hitl_aprovado: false, decision: '' } }];\n}\nif (!aprovado && !reprovado) {\n  return [{ json: { ok: false, error: 'decision inválida (use approve|reject)', recordId, hitl_aprovado: false, decision } }];\n}\n\nreturn [{\n  json: {\n    ok: true,\n    recordId,\n    airtable_id: recordId,\n    decision: aprovado ? 'approve' : 'reject',\n    hitl_aprovado: aprovado,\n    hitl_raw: decision\n  }\n}];"
+      },
+      "id": "code-hitl-params-001",
+      "name": "Parse Parametros HITL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        780
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "c-ok",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-hitl-params-001",
+      "name": "IF Params HITL OK",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        780
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=<html><body style=\"font-family:sans-serif;padding:2rem\"><h1>Pedido inválido</h1><p>{{ $json.error || 'Parâmetros inválidos' }}</p><p>Use os links Aprovar/Reprovar do Slack.</p></body></html>",
+        "options": {
+          "responseCode": 400,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "id": "resp-hitl-bad-001",
+      "name": "Responder HITL Invalido",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        960
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.AIRTABLE_BASE_ID || 'SUBSTITUA_BASE_ID' }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblbzeyF946ZBbVSJ"
+        },
+        "id": "={{ $json.recordId }}"
+      },
+      "id": "air-get-hitl-001",
+      "name": "Airtable Buscar Candidato",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        720,
+        700
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "CREDENTIAL_AIRTABLE",
+          "name": "Airtable PAT"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const prev = $('Parse Parametros HITL').item.json;\nconst raw = $input.first().json;\nconst f = raw.fields || raw;\n\nconst nome = f.Name || f.nome || '';\nconst email = f.Email || f.email || '';\nconst vaga = f.Job || f.vaga || '';\n\nreturn [{\n  json: {\n    ...prev,\n    airtable_id: raw.id || prev.recordId,\n    nome,\n    email,\n    vaga,\n    status_atual: f.Status || '',\n    human_decision_atual: f.Human_Decision || ''\n  }\n}];"
+      },
+      "id": "code-map-hitl-001",
+      "name": "Mapear Candidato HITL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "c-apr",
+              "leftValue": "={{ $json.hitl_aprovado }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-apr-001",
+      "name": "IF Aprovado HITL",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1200,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "=Atualização da sua candidatura - {{ $json.vaga }}",
+        "emailType": "text",
+        "message": "=Olá {{ $json.nome }},\n\nRecebemos sua candidatura para a vaga de {{ $json.vaga }} e gostaríamos de avançar para a próxima etapa.\n\nEm breve nossa equipe entrará em contato com os próximos passos.\n\nAtenciosamente,\nEquipe de Recrutamento",
+        "options": {}
+      },
+      "id": "gmail-001",
+      "name": "Gmail Convidar Candidato",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1440,
+        580
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "CREDENTIAL_GMAIL",
+          "name": "Gmail OAuth"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.AIRTABLE_BASE_ID || 'SUBSTITUA_BASE_ID' }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblbzeyF946ZBbVSJ"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Mapear Candidato HITL').item.json.airtable_id }}",
+            "Status": "Approved",
+            "Human_Decision": "Approved"
+          },
+          "matchingColumns": [
+            "id"
+          ]
+        },
+        "options": {}
+      },
+      "id": "air-apr-001",
+      "name": "Airtable Aprovado",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1680,
+        580
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "CREDENTIAL_AIRTABLE",
+          "name": "Airtable PAT"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=<html><body style=\"font-family:sans-serif;padding:2rem\"><h1>Decisão registrada: aprovado</h1><p>Candidato atualizado no Airtable e e-mail de convite disparado.</p><p>Pode fechar esta aba.</p></body></html>",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "id": "resp-hitl-ok-apr-001",
+      "name": "Responder HITL Aprovado",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1920,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.AIRTABLE_BASE_ID || 'SUBSTITUA_BASE_ID' }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblbzeyF946ZBbVSJ"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.airtable_id }}",
+            "Status": "HITL_Rejected",
+            "Human_Decision": "Rejected"
+          },
+          "matchingColumns": [
+            "id"
+          ]
+        },
+        "options": {}
+      },
+      "id": "air-rej-hitl-001",
+      "name": "Airtable Rejeitado HITL",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1440,
+        820
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "CREDENTIAL_AIRTABLE",
+          "name": "Airtable PAT"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=<html><body style=\"font-family:sans-serif;padding:2rem\"><h1>Decisão registrada: reprovado</h1><p>Candidato marcado como rejeitado no Airtable.</p><p>Pode fechar esta aba.</p></body></html>",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "id": "resp-hitl-ok-rej-001",
+      "name": "Responder HITL Reprovado",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1680,
+        820
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Tally": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Tally",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Tally": {
+      "main": [
+        [
+          {
+            "node": "Responder Tally",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Airtable Criar Candidato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable Criar Candidato": {
+      "main": [
+        [
+          {
+            "node": "Contexto Candidato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contexto Candidato": {
+      "main": [
+        [
+          {
+            "node": "Gemini Classificar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Classificar": {
+      "main": [
+        [
+          {
+            "node": "Parse Resultado IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Resultado IA": {
+      "main": [
+        [
+          {
+            "node": "Airtable Atualizar IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable Atualizar IA": {
+      "main": [
+        [
+          {
+            "node": "IF Precisa HITL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Precisa HITL": {
+      "main": [
+        [
+          {
+            "node": "Slack Notificar HITL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Airtable Rejeicao Automatica",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook HITL Decisao": {
+      "main": [
+        [
+          {
+            "node": "Parse Parametros HITL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Parametros HITL": {
+      "main": [
+        [
+          {
+            "node": "IF Params HITL OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Params HITL OK": {
+      "main": [
+        [
+          {
+            "node": "Airtable Buscar Candidato",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder HITL Invalido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable Buscar Candidato": {
+      "main": [
+        [
+          {
+            "node": "Mapear Candidato HITL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mapear Candidato HITL": {
+      "main": [
+        [
+          {
+            "node": "IF Aprovado HITL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Aprovado HITL": {
+      "main": [
+        [
+          {
+            "node": "Gmail Convidar Candidato",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Airtable Rejeitado HITL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Convidar Candidato": {
+      "main": [
+        [
+          {
+            "node": "Airtable Aprovado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable Aprovado": {
+      "main": [
+        [
+          {
+            "node": "Responder HITL Aprovado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable Rejeitado HITL": {
+      "main": [
+        [
+          {
+            "node": "Responder HITL Reprovado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "versionId": "1.0.0-triagem-rh",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "description": "Tally → Airtable → Gemini → Slack HITL (links) → webhook hitl-decisao → Gmail."
+  },
+  "tags": [
+    {
+      "name": "rh",
+      "createdAt": "2026-10-29T00:00:00.000Z",
+      "updatedAt": "2026-10-29T00:00:00.000Z",
+      "id": "tag-rh"
+    },
+    {
+      "name": "faculdade",
+      "createdAt": "2026-10-29T00:00:00.000Z",
+      "updatedAt": "2026-10-29T00:00:00.000Z",
+      "id": "tag-faculdade"
+    }
+  ]
+}

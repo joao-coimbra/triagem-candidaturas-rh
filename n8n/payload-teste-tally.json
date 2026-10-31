@@ -1,0 +1,24 @@
+{
+  "eventType": "FORM_RESPONSE",
+  "data": {
+    "responseId": "demo-submission-001",
+    "fields": [
+      { "key": "question_nome", "label": "Nome completo", "type": "INPUT_TEXT", "value": "Ana Souza Demo" },
+      { "key": "question_email", "label": "E-mail", "type": "INPUT_EMAIL", "value": "ana.souza.demo@example.com" },
+      { "key": "question_vaga", "label": "Vaga de interesse", "type": "DROPDOWN", "value": "Desenvolvedor Full Stack" },
+      { "key": "question_linkedin", "label": "LinkedIn", "type": "INPUT_LINK", "value": "https://linkedin.com/in/ana-souza-demo" },
+      {
+        "key": "question_resumo",
+        "label": "Conte um pouco da sua experiência",
+        "type": "TEXTAREA",
+        "value": "Desenvolvedora full stack com 4 anos em TypeScript, Node.js, React e PostgreSQL. Liderei integração de APIs e automações internas com n8n. Experiência com testes, CI/CD e code review."
+      },
+      {
+        "key": "question_cv",
+        "label": "Currículo (PDF)",
+        "type": "FILE_UPLOAD",
+        "value": [{ "url": "https://example.com/curriculo-ana-demo.pdf", "name": "curriculo-ana-demo.pdf" }]
+      }
+    ]
+  }
+}

@@ -1,0 +1,33 @@
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=${N8N_HOST:-localhost}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=${N8N_PROTOCOL:-http}
+      - NODE_ENV=production
+      - WEBHOOK_URL=${WEBHOOK_URL:-http://localhost:5678/}
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE:-America/Sao_Paulo}
+      - TZ=${GENERIC_TIMEZONE:-America/Sao_Paulo}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-change-me-to-a-long-random-string}
+      - N8N_SECURE_COOKIE=false
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_PERSONALIZATION_ENABLED=false
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
+      - AIRTABLE_BASE_ID=${AIRTABLE_BASE_ID}
+      - AIRTABLE_TABLE_ID=${AIRTABLE_TABLE_ID:-tblbzeyF946ZBbVSJ}
+      - SCORE_HITL_MINIMO=${SCORE_HITL_MINIMO:-50}
+      - SLACK_CHANNEL_RECRUTAMENTO=${SLACK_CHANNEL_RECRUTAMENTO:-#rh-triagem}
+      - SLACK_CHANNEL_ID=${SLACK_CHANNEL_ID}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    # Para Tally alcançar o webhook em ambiente local, exponha WEBHOOK_URL
+    # via Cloudflare Tunnel ou ngrok (ver README).
+
+volumes:
+  n8n_data:

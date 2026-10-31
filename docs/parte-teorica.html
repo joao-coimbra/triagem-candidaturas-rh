@@ -1,0 +1,777 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Triagem Inteligente de Candidaturas RH - Parte Teórica</title>
+<style>
+/* =========================================================================
+   Formatação conforme ABNT NBR 14724:2011.
+   Margens 3 cm superior e esquerda, 2 cm inferior e direita. Arial 12,
+   entrelinhas 1,5, texto justificado, recuo de 1,25 cm na primeira linha.
+   ========================================================================= */
+
+@page {
+  size: A4;
+  margin: 3cm 2cm 2cm 3cm;
+}
+
+* { box-sizing: border-box; }
+
+html { font-size: 12pt; }
+
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12pt;
+  line-height: 1.5;
+  color: #000;
+  text-align: justify;
+  hyphens: auto;
+}
+
+p { margin: 0 0 0 0; text-indent: 1.25cm; }
+p + p { margin-top: 0; }
+
+/* Seções primárias começam em página nova, em caixa alta e negrito. */
+h1 {
+  font-size: 12pt;
+  font-weight: bold;
+  text-transform: uppercase;
+  text-align: left;
+  text-indent: 0;
+  margin: 0 0 1.5em 0;
+  page-break-before: always;
+  page-break-after: avoid;
+}
+
+h2 {
+  font-size: 12pt;
+  font-weight: bold;
+  text-align: left;
+  text-indent: 0;
+  margin: 1.5em 0 0.6em 0;
+  page-break-after: avoid;
+}
+
+h3 {
+  font-size: 12pt;
+  font-weight: normal;
+  font-style: italic;
+  text-align: left;
+  text-indent: 0;
+  margin: 1.2em 0 0.5em 0;
+  page-break-after: avoid;
+}
+
+/* ------------------------------------------------------------------ capa */
+.capa {
+  height: 24cm;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  text-transform: uppercase;
+  page-break-after: always;
+}
+.capa p { text-indent: 0; margin: 0; }
+.capa .instituicao { font-weight: bold; margin-bottom: 0.4em; }
+.capa .curso { margin-bottom: 0.4em; }
+.capa .autor { margin-top: 4cm; }
+.capa .titulo {
+  margin-top: auto;
+  margin-bottom: auto;
+  font-weight: bold;
+  font-size: 14pt;
+  line-height: 1.5;
+}
+.capa .local { margin-top: auto; }
+
+/* --------------------------------------------------------------- resumo */
+.folha-rosto-nota {
+  width: 8cm;
+  margin: 2em 0 2em auto;
+  font-size: 10pt;
+  line-height: 1.2;
+  text-align: justify;
+  text-indent: 0;
+  text-transform: none;
+}
+
+.resumo-corpo { text-indent: 0; }
+.palavras-chave { text-indent: 0; margin-top: 1em; }
+
+/* --------------------------------------------------------------- sumário */
+/* O sumário ocupa folha própria, conforme a NBR 14724. */
+.sumario { page-break-before: always; page-break-after: always; }
+.sumario h1 { page-break-before: avoid; text-align: center; }
+.sumario ol { list-style: none; padding: 0; margin: 0; }
+.sumario li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4em;
+  margin-bottom: 0.55em;
+  text-indent: 0;
+}
+.sumario .num { min-width: 1.6em; }
+.sumario .txt { white-space: nowrap; }
+.sumario .pontos {
+  flex: 1;
+  border-bottom: 1px dotted #000;
+  transform: translateY(-0.25em);
+}
+.sumario .sub { padding-left: 1.6em; }
+.sumario .sub .num { min-width: 2.4em; }
+
+/* ------------------------------------------------------- quadros e figuras */
+figure { margin: 1.4em 0; text-indent: 0; page-break-inside: avoid; }
+
+figcaption {
+  font-size: 10pt;
+  line-height: 1.2;
+  text-align: center;
+  text-indent: 0;
+  margin-bottom: 0.5em;
+}
+figcaption b { font-weight: bold; }
+
+.fonte {
+  font-size: 10pt;
+  line-height: 1.2;
+  text-align: center;
+  text-indent: 0;
+  margin-top: 0.4em;
+}
+
+figure img {
+  display: block;
+  width: 100%;
+  border: 1px solid #999;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10pt;
+  line-height: 1.25;
+}
+th, td {
+  border: 1px solid #000;
+  padding: 0.4em 0.5em;
+  text-align: left;
+  vertical-align: top;
+}
+th { font-weight: bold; background: #efefef; }
+
+/* Diagramas em SVG. */
+.diagrama { width: 100%; height: auto; }
+
+/* -------------------------------------------------------------- código */
+code {
+  font-family: "Courier New", Courier, monospace;
+  font-size: 10.5pt;
+}
+
+pre {
+  font-family: "Courier New", Courier, monospace;
+  font-size: 9.5pt;
+  line-height: 1.25;
+  border: 1px solid #999;
+  padding: 0.7em 0.9em;
+  text-indent: 0;
+  text-align: left;
+  white-space: pre-wrap;
+  page-break-inside: avoid;
+}
+
+/* --------------------------------------------------------- referências */
+.referencias p {
+  text-indent: 0;
+  margin-bottom: 1em;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.sem-recuo { text-indent: 0; }
+</style>
+</head>
+<body>
+
+<section class="capa">
+  <p class="instituicao">Graduação Tecnológica em Inteligência Artificial e Automação Digital</p>
+  <p class="curso">Desenvolvimento de Aplicações e Automações com Low Code</p>
+  <p class="autor">João Henrique Benatti Coimbra</p>
+
+  <div class="titulo">
+    <p>Triagem inteligente de candidaturas RH</p>
+    <p style="font-weight: normal; font-size: 12pt; margin-top: 0.8em;">
+      Arquitetura de uma automação empresarial inteligente com low-code e inteligência artificial
+    </p>
+  </div>
+
+  <p class="local">2026</p>
+</section>
+
+<section>
+  <h1 style="page-break-before: avoid; text-align: center;">Resumo</h1>
+
+  <p class="resumo-corpo">
+    Empresas em crescimento recebem um volume elevado de candidaturas por vaga e
+    ainda dependem de triagem manual: abrir formulários, copiar dados para
+    planilhas, classificar currículos sem critério compartilhado e só então
+    comunicar o candidato. Este trabalho descreve a arquitetura de uma automação
+    empresarial inteligente de triagem de candidaturas de Recursos Humanos,
+    orquestrada em n8n, com entrada pelo Tally, persistência no Airtable,
+    classificação por modelo generativo (Gemini), regras condicionais, supervisão
+    humana (Human-in-the-Loop) via Slack e comunicação ao candidato por Gmail
+    apenas após aprovação. A solução percorre a cadeia Entrada, Processamento,
+    Dados, IA, Decisão, Ação, Supervisão e Registro, deixa explícito o papel
+    concreto da Inteligência Artificial e delimita a ação crítica que permanece
+    sob responsabilidade humana. Discutem-se também riscos, cuidados de
+    privacidade previstos na Lei Geral de Proteção de Dados e o tratamento básico
+    de falhas. O fluxo e as instruções de reprodução estão no repositório do
+    projeto.
+  </p>
+
+  <p class="palavras-chave">
+    <b>Palavras-chave:</b> automação; low-code; inteligência artificial;
+    human-in-the-loop; recrutamento e seleção; proteção de dados pessoais.
+  </p>
+</section>
+
+<section class="sumario">
+  <h1>Sumário</h1>
+  <ol>
+    <li><span class="num">1</span><span class="txt">INTRODUÇÃO</span><span class="pontos"></span><span>4</span></li>
+    <li><span class="num">2</span><span class="txt">PROBLEMA EMPRESARIAL E PROCESSO ESCOLHIDO</span><span class="pontos"></span><span>5</span></li>
+    <li><span class="num">3</span><span class="txt">PROCESSO ATUAL E OPORTUNIDADES DE AUTOMAÇÃO</span><span class="pontos"></span><span>5</span></li>
+    <li class="sub"><span class="num">3.1</span><span class="txt">Situação atual (AS-IS)</span><span class="pontos"></span><span>5</span></li>
+    <li class="sub"><span class="num">3.2</span><span class="txt">Oportunidades</span><span class="pontos"></span><span>6</span></li>
+    <li><span class="num">4</span><span class="txt">SOLUÇÃO PROPOSTA (TO-BE)</span><span class="pontos"></span><span>6</span></li>
+    <li><span class="num">5</span><span class="txt">ARQUITETURA E FLUXO DE INTEGRAÇÃO</span><span class="pontos"></span><span>7</span></li>
+    <li class="sub"><span class="num">5.1</span><span class="txt">Visão geral dos componentes</span><span class="pontos"></span><span>7</span></li>
+    <li class="sub"><span class="num">5.2</span><span class="txt">Etapas do fluxo</span><span class="pontos"></span><span>8</span></li>
+    <li><span class="num">6</span><span class="txt">SISTEMAS, DADOS E CONTRATO DA IA</span><span class="pontos"></span><span>10</span></li>
+    <li class="sub"><span class="num">6.1</span><span class="txt">Integrações</span><span class="pontos"></span><span>10</span></li>
+    <li class="sub"><span class="num">6.2</span><span class="txt">Modelo de dados</span><span class="pontos"></span><span>10</span></li>
+    <li class="sub"><span class="num">6.3</span><span class="txt">Contrato de saída da Inteligência Artificial</span><span class="pontos"></span><span>11</span></li>
+    <li><span class="num">7</span><span class="txt">FUNÇÃO DA IA E SUPERVISÃO HUMANA</span><span class="pontos"></span><span>12</span></li>
+    <li class="sub"><span class="num">7.1</span><span class="txt">O que a IA executa</span><span class="pontos"></span><span>12</span></li>
+    <li class="sub"><span class="num">7.2</span><span class="txt">Decisões automatizadas e Human-in-the-Loop</span><span class="pontos"></span><span>12</span></li>
+    <li><span class="num">8</span><span class="txt">RISCOS, PRIVACIDADE E FALHAS</span><span class="pontos"></span><span>14</span></li>
+    <li class="sub"><span class="num">8.1</span><span class="txt">Lei Geral de Proteção de Dados</span><span class="pontos"></span><span>14</span></li>
+    <li class="sub"><span class="num">8.2</span><span class="txt">Segurança</span><span class="pontos"></span><span>14</span></li>
+    <li class="sub"><span class="num">8.3</span><span class="txt">Tratamento de falhas e limites do MVP</span><span class="pontos"></span><span>15</span></li>
+    <li><span class="num">9</span><span class="txt">DECISÕES DE STACK</span><span class="pontos"></span><span>15</span></li>
+    <li><span class="num">10</span><span class="txt">CONSIDERAÇÕES FINAIS</span><span class="pontos"></span><span>16</span></li>
+    <li><span class="num"></span><span class="txt">REFERÊNCIAS</span><span class="pontos"></span><span>17</span></li>
+  </ol>
+</section>
+
+<!-- ==================================================================== 1 -->
+<h1>1 Introdução</h1>
+
+<p>
+  A triagem inicial de candidaturas permanece, em muitos contextos, dependente de
+  trabalho manual repetitivo. Informações chegam por formulários ou correio
+  eletrônico, precisam ser registradas em sistemas internos, classificadas
+  segundo a aderência à vaga e encaminhadas a responsáveis até a conclusão do
+  ciclo. Quando esse percurso depende de pessoas transferindo dados entre
+  ferramentas e tomando decisões repetitivas sob pressão de volume, aumentam o
+  tempo de resposta, o retrabalho e a dificuldade de rastrear quem decidiu o quê
+  e com qual fundamento.
+</p>
+
+<p>
+  O enunciado da disciplina propõe a construção de uma automação empresarial
+  inteligente capaz de receber uma demanda, processar informações, utilizar
+  Inteligência Artificial dentro de limites definidos, executar ações em
+  diferentes sistemas e registrar o resultado, com pelo menos um ponto de
+  Human-in-the-Loop. Este documento descreve a arquitetura adotada para o caso de
+  triagem de candidaturas de Recursos Humanos, justificando as escolhas de
+  ferramentas, o papel da Inteligência Artificial, as regras de negócio e os
+  cuidados de privacidade e falha.
+</p>
+
+<p>
+  A implementação prática utiliza n8n como orquestrador low-code, Tally como
+  formulário de entrada, Airtable como persistência, Gemini como modelo de
+  classificação, Slack como canal de supervisão humana e Gmail como ação de
+  comunicação após aprovação. O código e as instruções de reprodução estão
+  disponíveis no repositório do projeto.
+</p>
+
+<!-- ==================================================================== 2 -->
+<h1>2 Problema empresarial e processo escolhido</h1>
+
+<p>
+  Empresas em crescimento recebem dezenas ou centenas de candidaturas por vaga. O
+  fluxo típico de Recursos Humanos ainda combina leitura individual de
+  currículos, classificação pouco padronizada entre recrutadores e atualização
+  tardia de status. O resultado é atraso na resposta ao candidato,
+  inconsistência de critérios e baixa rastreabilidade.
+</p>
+
+<p>
+  O processo escolhido é a triagem inicial (screening): do preenchimento do
+  formulário até a decisão de convidar, ou não, o candidato para a próxima
+  etapa. Trata-se de um processo real, sensível à imagem empregadora e adequado
+  para demonstrar o uso conjugado de automação, dados, Inteligência Artificial e
+  supervisão humana.
+</p>
+
+<!-- ==================================================================== 3 -->
+<h1>3 Processo atual e oportunidades de automação</h1>
+
+<h2>3.1 Situação atual (AS-IS)</h2>
+
+<p>
+  No cenário atual, o candidato envia currículo por formulário ou e-mail. O
+  recrutador copia os dados para planilha ou sistema de acompanhamento, lê o
+  currículo, classifica sem critério explícito compartilhado, decide sozinho se
+  agenda entrevista e envia a comunicação manualmente, atualizando o status
+  quando se lembra de fazê-lo.
+</p>
+
+<h2>3.2 Oportunidades</h2>
+
+<p>
+  A automação pode padronizar a captura, registrar automaticamente cada
+  candidatura, gerar score e justificativa por modelo generativo, rejeitar baixa
+  aderência com trilha auditável, exigir validação humana antes do contato nos
+  casos médio e alto e centralizar status e motivos. O Quadro 1 resume o
+  mapeamento entre etapas e melhorias.
+</p>
+
+<figure>
+  <figcaption><b>Quadro 1</b> - Etapas do processo e oportunidades de automação</figcaption>
+  <table>
+    <thead>
+      <tr><th style="width:32%">Etapa</th><th>Melhoria proposta</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Entrada</td><td>Formulário padronizado no Tally</td></tr>
+      <tr><td>Registro</td><td>Gravação automática no Airtable</td></tr>
+      <tr><td>Análise</td><td>Score e justificativa via Gemini</td></tr>
+      <tr><td>Baixa aderência</td><td>Rejeição automática com registro</td></tr>
+      <tr><td>Média ou alta aderência</td><td>Validação humana no Slack</td></tr>
+      <tr><td>Comunicação</td><td>Gmail somente após aprovação</td></tr>
+      <tr><td>Auditoria</td><td>Status e motivos centralizados</td></tr>
+    </tbody>
+  </table>
+  <p class="fonte">Fonte: elaborado pelo autor (2026).</p>
+</figure>
+
+<!-- ==================================================================== 4 -->
+<h1>4 Solução proposta (TO-BE)</h1>
+
+<p>
+  A solução redesenha o processo na lógica exigida pelo enunciado: Entrada,
+  Processamento, Dados, IA, Decisão, Ação, Supervisão e Registro. O candidato
+  preenche o Tally com dados e currículo em PDF. O n8n recebe o webhook,
+  normaliza o payload e cria o registro no Airtable com status
+  <code>Under_Review</code>. O Gemini devolve score de zero a cem,
+  classification, skills e next_step em JSON. Regras condicionais rejeitam
+  automaticamente scores inferiores a cinquenta (<code>Auto_Rejected</code>) e
+  encaminham scores iguais ou superiores a cinquenta, bem como falhas da
+  Inteligência Artificial, para Human-in-the-Loop no Slack.
+</p>
+
+<p>
+  No ramo de supervisão, a execução da triagem notifica o Slack com links Aprovar
+  e Reprovar e termina; não há nó Wait. O recrutador revisa o currículo no campo
+  Resume (Attachment) e clica na decisão. O webhook <code>hitl-decisao</code>
+  registra <code>Human_Decision</code> e Status. Somente após approve o Gmail
+  contacta o candidato e o Airtable registra <code>Approved</code>; em reject,
+  registra-se <code>HITL_Rejected</code>.
+</p>
+
+<figure>
+  <figcaption><b>Figura 1</b> - Formulário público de candidatura no Tally</figcaption>
+  <img src="print-tally-form.png" alt="Formulário Tally de candidatura">
+  <p class="fonte">Fonte: elaborado pelo autor (2026).</p>
+</figure>
+
+<!-- ==================================================================== 5 -->
+<h1>5 Arquitetura e fluxo de integração</h1>
+
+<h2>5.1 Visão geral dos componentes</h2>
+
+<p>
+  A orquestração permanece no n8n em edição Community, executada via Docker para
+  reprodutibilidade acadêmica. O Tally dispara a entrada. O Airtable guarda
+  estado, anexos e auditoria. O Gemini classifica. O Slack concentra a supervisão
+  humana com link para o registro e links Aprovar e Reprovar. O Gmail executa a
+  ação externa após o ok humano. Em ambiente local, túnel (Cloudflare Tunnel ou
+  ngrok) expõe os webhooks ao Tally e aos cliques do Slack. O Quadro 2 apresenta
+  os componentes.
+</p>
+
+<figure>
+  <figcaption><b>Quadro 2</b> - Componentes da solução</figcaption>
+  <table>
+    <thead>
+      <tr><th style="width:22%">Camada</th><th style="width:26%">Tecnologia</th><th>Papel</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Entrada</td><td>Tally</td><td>Formulário e webhook</td></tr>
+      <tr><td>Orquestração</td><td>n8n (Docker)</td><td>Workflow multietapa</td></tr>
+      <tr><td>Dados</td><td>Airtable</td><td>Tabela Candidates</td></tr>
+      <tr><td>Inteligência</td><td>Gemini</td><td>Classificação estruturada</td></tr>
+      <tr><td>Supervisão</td><td>Slack</td><td>HITL assíncrono</td></tr>
+      <tr><td>Ação</td><td>Gmail</td><td>Contato pós-aprovação</td></tr>
+    </tbody>
+  </table>
+  <p class="fonte">Fonte: elaborado pelo autor (2026).</p>
+</figure>
+
+<figure>
+  <figcaption><b>Figura 2</b> - Fluxo entre os sistemas da triagem</figcaption>
+  <svg class="diagrama" viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" font-family="Arial, sans-serif">
+    <defs>
+      <marker id="seta" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="#000"/>
+      </marker>
+    </defs>
+
+    <rect x="20" y="20" width="120" height="46" fill="none" stroke="#000"/>
+    <text x="80" y="40" font-size="11" text-anchor="middle">Tally</text>
+    <text x="80" y="55" font-size="9" text-anchor="middle">formulário</text>
+
+    <rect x="180" y="20" width="140" height="46" fill="none" stroke="#000"/>
+    <text x="250" y="40" font-size="11" text-anchor="middle">n8n</text>
+    <text x="250" y="55" font-size="9" text-anchor="middle">orquestração</text>
+
+    <rect x="360" y="20" width="140" height="46" fill="none" stroke="#000"/>
+    <text x="430" y="40" font-size="11" text-anchor="middle">Airtable</text>
+    <text x="430" y="55" font-size="9" text-anchor="middle">Candidates</text>
+
+    <rect x="540" y="20" width="160" height="46" fill="none" stroke="#000"/>
+    <text x="620" y="40" font-size="11" text-anchor="middle">Gemini</text>
+    <text x="620" y="55" font-size="9" text-anchor="middle">score e JSON</text>
+
+    <rect x="180" y="120" width="140" height="46" fill="none" stroke="#000"/>
+    <text x="250" y="140" font-size="11" text-anchor="middle">Slack</text>
+    <text x="250" y="155" font-size="9" text-anchor="middle">HITL Aprovar/Reprovar</text>
+
+    <rect x="360" y="120" width="140" height="46" fill="none" stroke="#000"/>
+    <text x="430" y="140" font-size="11" text-anchor="middle">hitl-decisao</text>
+    <text x="430" y="155" font-size="9" text-anchor="middle">webhook n8n</text>
+
+    <rect x="540" y="120" width="160" height="46" fill="none" stroke="#000"/>
+    <text x="620" y="140" font-size="11" text-anchor="middle">Gmail</text>
+    <text x="620" y="155" font-size="9" text-anchor="middle">contato pós-aprovação</text>
+
+    <rect x="20" y="220" width="200" height="46" fill="none" stroke="#000"/>
+    <text x="120" y="240" font-size="11" text-anchor="middle">Recrutador</text>
+    <text x="120" y="255" font-size="9" text-anchor="middle">revisa Resume no Airtable</text>
+
+    <line x1="140" y1="43" x2="178" y2="43" stroke="#000" marker-end="url(#seta)"/>
+    <line x1="320" y1="43" x2="358" y2="43" stroke="#000" marker-end="url(#seta)"/>
+    <line x1="500" y1="43" x2="538" y2="43" stroke="#000" marker-end="url(#seta)"/>
+    <line x1="250" y1="66" x2="250" y2="118" stroke="#000" marker-end="url(#seta)"/>
+    <line x1="320" y1="143" x2="358" y2="143" stroke="#000" marker-end="url(#seta)"/>
+    <line x1="500" y1="143" x2="538" y2="143" stroke="#000" marker-end="url(#seta)"/>
+    <line x1="120" y1="220" x2="220" y2="168" stroke="#000" marker-end="url(#seta)"/>
+    <text x="300" y="100" font-size="8.5">score &gt;= 50 ou falha da IA</text>
+    <text x="470" y="110" font-size="8.5">clique assíncrono</text>
+  </svg>
+  <p class="fonte">Fonte: elaborado pelo autor (2026).</p>
+</figure>
+
+<figure>
+  <figcaption><b>Figura 3</b> - Workflow de triagem no n8n</figcaption>
+  <img src="print-n8n-workflow.png" alt="Workflow n8n de triagem">
+  <p class="fonte">Fonte: elaborado pelo autor (2026).</p>
+</figure>
+
+<h2>5.2 Etapas do fluxo</h2>
+
+<p>
+  O fluxo técnico percorre as etapas a seguir. Primeiro, o webhook do Tally chega
+  ao n8n. Em seguida, o payload é normalizado. O registro é criado no Airtable. Uma
+  requisição HTTP chama o Gemini e o resultado é interpretado como JSON. Um desvio
+  condicional escolhe entre rejeição automática e fila de supervisão. No
+  Human-in-the-Loop, o Slack recebe a mensagem com links Aprovar e Reprovar
+  apontando para <code>WEBHOOK_URL/webhook/hitl-decisao</code>; a execução de
+  triagem encerra. Quando o recrutador clica, o webhook de decisão atualiza o
+  Airtable e, se aprovado, dispara o Gmail.
+</p>
+
+<figure>
+  <figcaption><b>Figura 4</b> - Configuração do webhook no Tally</figcaption>
+  <img src="print-tally-webhook.png" alt="Webhook Tally apontando para n8n">
+  <p class="fonte">Fonte: elaborado pelo autor (2026).</p>
+</figure>
+
+<figure>
+  <figcaption><b>Figura 5</b> - Execução bem-sucedida no n8n</figcaption>
+  <img src="print-n8n-execucao.png" alt="Execução do workflow no n8n">
+  <p class="fonte">Fonte: elaborado pelo autor (2026).</p>
+</figure>
+
+<figure>
+  <figcaption><b>Figura 6</b> - Registro do candidato no Airtable</figcaption>
+  <img src="print-airtable-candidato.png" alt="Registro Airtable Candidates">
+  <p class="fonte">Fonte: elaborado pelo autor (2026).</p>
+</figure>
+
+<!-- ==================================================================== 6 -->
+<h1>6 Sistemas, dados e contrato da IA</h1>
+
+<h2>6.1 Integrações</h2>
+
+<p>
+  As integrações realizadas são: Tally para n8n por webhook; n8n para Airtable em
+  operações de criação e atualização; n8n para Gemini por HTTP; n8n para Slack na
+  notificação de supervisão; n8n para Gmail na comunicação pós-aprovação; e um
+  segundo webhook (<code>hitl-decisao</code>) para registrar a decisão humana. O
+  enunciado exige ao menos dois sistemas externos; a solução excede esse mínimo
+  de forma justificada pelo processo real de triagem.
+</p>
+
+<h2>6.2 Modelo de dados</h2>
+
+<p>
+  A base Airtable HR Screening concentra a tabela Candidates, com campos em inglês
+  para aderência a convenção global de dados. O Quadro 3 resume os campos
+  principais.
+</p>
+
+<figure>
+  <figcaption><b>Quadro 3</b> - Campos principais da tabela Candidates</figcaption>
+  <table>
+    <thead>
+      <tr><th style="width:28%">Campo</th><th>Conteúdo</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Name, Email, Job, LinkedIn</td><td>Identificação e vaga pretendida</td></tr>
+      <tr><td>Summary</td><td>Texto enviado pelo candidato no Tally (não é resumo gerado pela IA)</td></tr>
+      <tr><td>Resume</td><td>PDF em Attachment, para revisão humana</td></tr>
+      <tr><td>Score, Classification</td><td>Resultado numérico e faixa High, Medium ou Low</td></tr>
+      <tr><td>AI_Reason, Extracted_Skills, Suggested_Next_Step</td><td>Justificativa e recomendações da IA (prosa em português na demonstração)</td></tr>
+      <tr><td>Status, Human_Decision</td><td>Estado do fluxo e decisão do recrutador</td></tr>
+      <tr><td>Tally_Submission_Id, Record_URL, Error_Detail</td><td>Rastreio, link e detalhe de falha</td></tr>
+    </tbody>
+  </table>
+  <p class="fonte">Fonte: elaborado pelo autor (2026).</p>
+</figure>
+
+<p>
+  Os status previstos incluem <code>Under_Review</code>,
+  <code>Awaiting_HITL</code>, <code>Approved</code>,
+  <code>Auto_Rejected</code>, <code>HITL_Rejected</code> e <code>Error</code>.
+</p>
+
+<h2>6.3 Contrato de saída da Inteligência Artificial</h2>
+
+<p>
+  O modelo deve responder exclusivamente com JSON válido, sem marcação adicional.
+  A classification assume High, Medium ou Low; o score varia de zero a cem. O
+  contrato de campos permanece em inglês; a prosa de justificativa e próximo passo
+  pode ser em português para leitura no Slack e na demonstração.
+</p>
+
+<pre>{
+  "score": 78,
+  "classification": "High",
+  "reason": "...",
+  "skills": ["SQL", "Python"],
+  "next_step": "Agendar entrevista técnica"
+}</pre>
+
+<!-- ==================================================================== 7 -->
+<h1>7 Função da IA e supervisão humana</h1>
+
+<h2>7.1 O que a IA executa</h2>
+
+<p>
+  A Inteligência Artificial interpreta o texto do formulário, extrai habilidades,
+  calcula score de aderência, classifica o perfil e sugere próximo passo. Ela não
+  envia convite nem qualquer comunicação externa nos casos de aderência média ou
+  alta. Essa delimitação atende ao enunciado: função concreta da Inteligência
+  Artificial com limites claros e pelo menos uma situação de Human-in-the-Loop.
+</p>
+
+<h2>7.2 Decisões automatizadas e Human-in-the-Loop</h2>
+
+<p>
+  O ponto sensível é o contato com o candidato, ação de imagem empregadora. Por
+  isso a supervisão humana ocorre antes do Gmail. O modelo adotado combina Slack
+  para a decisão (links Aprovar e Reprovar) e Airtable para a revisão do currículo
+  no campo Resume, sem painel administrativo dedicado no MVP e sem manter a
+  execução da triagem bloqueada em Wait. O Quadro 4 distingue o que a regra
+  automatiza e o que exige pessoa.
+</p>
+
+<figure>
+  <figcaption><b>Quadro 4</b> - Decisões automatizadas e supervisão humana</figcaption>
+  <table>
+    <thead>
+      <tr><th style="width:34%">Situação</th><th style="width:28%">Quem decide</th><th>Efeito</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Score menor que 50</td><td>Regra no n8n</td><td>Auto_Rejected, sem convite</td></tr>
+      <tr><td>Score maior ou igual a 50</td><td>Humano (HITL)</td><td>Slack com Aprovar/Reprovar</td></tr>
+      <tr><td>Falha da IA ou JSON inválido</td><td>Humano (fallback)</td><td>HITL com Error_Detail</td></tr>
+      <tr><td>Aprovado no Slack</td><td>Automação (webhook)</td><td>Gmail e status Approved</td></tr>
+      <tr><td>Reprovado no Slack</td><td>Automação (webhook)</td><td>Status HITL_Rejected</td></tr>
+    </tbody>
+  </table>
+  <p class="fonte">Fonte: elaborado pelo autor (2026).</p>
+</figure>
+
+<figure>
+  <figcaption><b>Figura 7</b> - Mensagem de Human-in-the-Loop no Slack</figcaption>
+  <img src="print-slack-hitl.png" alt="Mensagem Slack com Aprovar e Reprovar">
+  <p class="fonte">Fonte: elaborado pelo autor (2026).</p>
+</figure>
+
+<figure>
+  <figcaption><b>Figura 8</b> - E-mail ao candidato após aprovação</figcaption>
+  <img src="print-gmail-convite.png" alt="E-mail Gmail de convite">
+  <p class="fonte">Fonte: elaborado pelo autor (2026).</p>
+</figure>
+
+<!-- ==================================================================== 8 -->
+<h1>8 Riscos, privacidade e falhas</h1>
+
+<h2>8.1 Lei Geral de Proteção de Dados</h2>
+
+<p>
+  Currículo e endereço de correio eletrônico são dados pessoais. O acesso ao
+  Airtable e ao canal Slack deve permanecer restrito. Na demonstração acadêmica,
+  preferem-se dados fictícios. Tokens, arquivos de ambiente e currículos reais de
+  terceiros não devem ser versionados. O formulário deve informar a finalidade da
+  coleta.
+</p>
+
+<h2>8.2 Segurança</h2>
+
+<p>
+  O caminho do webhook deve ser pouco óbvio. Credenciais ficam apenas na interface
+  do n8n ou em variáveis de ambiente. O canal Slack de triagem permanece privado.
+  Quando disponível, a assinatura do webhook do Tally pode ser validada. Os links
+  de decisão carregam apenas identificadores de registro e a decisão, sem tokens
+  de API neste documento ou no repositório.
+</p>
+
+<h2>8.3 Tratamento de falhas e limites do MVP</h2>
+
+<p>
+  O nó de chamada ao Gemini continua em falha controlada. O parse do JSON é
+  defensivo. Em erro da Inteligência Artificial, o fluxo não rejeita
+  automaticamente: encaminha para Human-in-the-Loop com Error_Detail. Se o
+  Airtable estiver indisponível, a execução falha com registro no n8n. Se ninguém
+  responder no Slack, a candidatura permanece em Awaiting_HITL até o clique; a
+  execução da triagem já terminou e a decisão chega pelo webhook separado. Sem
+  túnel, o Tally e os links do Slack não alcançam o n8n em localhost, condição
+  documentada no README.
+</p>
+
+<p>
+  Fora do escopo do MVP estão o Google Calendar, um portal administrativo de
+  Recursos Humanos e o OCR completo do PDF. A Inteligência Artificial prioriza o
+  texto do Summary; o PDF permanece disponível para o humano no campo Resume
+  (Attachment) do Airtable.
+</p>
+
+<!-- ==================================================================== 9 -->
+<h1>9 Decisões de stack</h1>
+
+<p>
+  O n8n em Docker foi preferido ao n8n Cloud por ser gratuito de forma permanente
+  na edição Community e por permitir que o professor replique o ambiente. O Tally
+  foi preferido ao Google Forms por oferecer formulário mais apresentável com
+  webhook gratuito. O Airtable foi preferido a planilhas soltas por aproximar-se
+  de base operacional low-code. O Gemini cobre o requisito de Inteligência
+  Artificial com cota gratuita adequada à demonstração, observados os limites de
+  taxa da API. O Human-in-the-Loop via Slack (Aprovar/Reprovar) mais Airtable
+  cumpre a supervisão sem construir interface administrativa e sem bloquear o
+  workflow com Wait. Make seria equivalente aceito pelo enunciado; a escolha do
+  n8n reflete familiaridade operacional e paridade funcional.
+</p>
+
+<figure>
+  <figcaption><b>Quadro 5</b> - Justificativa resumida das escolhas</figcaption>
+  <table>
+    <thead>
+      <tr><th style="width:36%">Escolha</th><th>Motivo principal</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>n8n no Docker</td><td>Custo zero e reprodutibilidade</td></tr>
+      <tr><td>Tally</td><td>UX e webhook gratuitos</td></tr>
+      <tr><td>Airtable</td><td>Persistência low-code com anexos</td></tr>
+      <tr><td>Gemini</td><td>Classificação com cota free</td></tr>
+      <tr><td>Slack (links HITL) e Airtable</td><td>Supervisão assíncrona sem UI própria</td></tr>
+      <tr><td>Gmail</td><td>Ação pós-aprovação com conta já disponível</td></tr>
+    </tbody>
+  </table>
+  <p class="fonte">Fonte: elaborado pelo autor (2026).</p>
+</figure>
+
+<!-- ==================================================================== 10 -->
+<h1>10 Considerações finais</h1>
+
+<p>
+  A arquitetura descrita demonstra a passagem de uma automação convencional para
+  uma operação inteligente de triagem de candidaturas. Há múltiplas etapas,
+  integrações entre sistemas, regras condicionais, persistência, tratamento de
+  falhas e um ponto explícito de supervisão humana antes da ação crítica de
+  contato. A Inteligência Artificial possui função concreta de classificação e
+  recomendação, sem usurpar a decisão final de comunicar o candidato.
+</p>
+
+<p>
+  Como evolução, destacam-se o agendamento em calendário após aprovação, a
+  extração automática de texto do PDF, a especialização em mais de um agente e um
+  painel simples de funil. Tais itens permanecem fora da entrega mínima e não
+  comprometem o atendimento à rubrica teórica e prática do módulo.
+</p>
+
+<!-- =============================================================== refs -->
+<h1>Referências</h1>
+
+<div class="referencias">
+
+<p>
+  AIRTABLE. <b>Airtable Web API</b>. San Francisco, 2026. Disponível em:
+  https://airtable.com/developers/web/api/introduction. Acesso em: 30 out. 2026.
+</p>
+
+<p>
+  BRASIL. <b>Lei nº 13.709, de 14 de agosto de 2018</b>. Lei Geral de Proteção de
+  Dados Pessoais (LGPD). Brasília, DF: Presidência da República, 2018. Disponível
+  em: https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm.
+  Acesso em: 30 out. 2026.
+</p>
+
+<p>
+  GOOGLE. <b>Gemini API documentation</b>. 2026. Disponível em:
+  https://ai.google.dev/. Acesso em: 30 out. 2026.
+</p>
+
+<p>
+  N8N. <b>n8n Documentation</b>. 2026. Disponível em: https://docs.n8n.io/.
+  Acesso em: 30 out. 2026.
+</p>
+
+<p>
+  TALLY. <b>Webhooks</b>. 2026. Disponível em: https://tally.so/help/webhooks.
+  Acesso em: 30 out. 2026.
+</p>
+
+<p>
+  TALLY. <b>n8n integration</b>. 2026. Disponível em:
+  https://tally.so/help/n8n-integration. Acesso em: 30 out. 2026.
+</p>
+
+<p>
+  UNIFECAF. <b>Trabalho: AI Operations - Construindo uma Automação Empresarial
+  Inteligente com Low-Code e Agentes de IA</b>. Disciplina Desenvolvimento de
+  Aplicações e Automações com Low Code, 2026.
+</p>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,22 @@
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials/
+n8n_data/
+tools/
+.tmp_*
+.n8n_workflow_id
+.DS_Store
+Thumbs.db
+*.log
+cloudflared*.log
+.cursor/
+
+# Artefatos intermediários da geração do PDF
+docs/.numerado.pdf
+docs/.limpo.pdf
+docs/.passagem.txt
+node_modules/
+

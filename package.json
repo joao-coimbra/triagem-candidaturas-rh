@@ -1,0 +1,12 @@
+{
+  "name": "triagem-candidaturas-rh",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build:pdf": "node scripts/build-pdf.mjs"
+  },
+  "devDependencies": {
+    "pdf-lib": "^1.17.1",
+    "playwright": "^1.62.1"
+  }
+}
