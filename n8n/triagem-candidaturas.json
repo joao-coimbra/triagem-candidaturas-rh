@@ -151,38 +151,51 @@
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "=https://generativelanguage.googleapis.com/v1beta/models/{{ $env.GEMINI_MODEL || 'gemini-2.5-flash' }}:generateContent",
-        "sendQuery": true,
-        "queryParameters": {
-          "parameters": [
+        "resource": "text",
+        "operation": "message",
+        "modelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "models/gemini-2.5-flash-lite"
+        },
+        "messages": {
+          "values": [
             {
-              "name": "key",
-              "value": "={{ $env.GEMINI_API_KEY }}"
+              "content": "={{ 'Job: ' + String($json.vaga || '') + '\\n' + 'Name: ' + String($json.nome || '') + '\\n' + 'LinkedIn: ' + String($json.linkedin || '') + '\\n' + 'Experience/summary:\\n' + String($json.resumo || '') + '\\n\\n' + 'Respond with ONLY valid JSON (no markdown), English keys, in this shape:\\n' + '{\"score\": number 0-100, \"classification\": \"High\"|\"Medium\"|\"Low\", \"reason\": string, \"skills\": string[], \"next_step\": string}\\n' + 'Write reason and next_step in Brazilian Portuguese. Keep classification exactly as High, Medium or Low. Criteria: relevant experience, clarity, apparent seniority, alignment with the job title.' }}",
+              "role": "user"
             }
           ]
         },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'You are an HR screening assistant. Score how well the candidate fits the job.\\n\\n' + 'Job: ' + String($json.vaga || '') + '\\n' + 'Name: ' + String($json.nome || '') + '\\n' + 'LinkedIn: ' + String($json.linkedin || '') + '\\n' + 'Experience/summary:\\n' + String($json.resumo || '') + '\\n\\n' + 'Respond with ONLY valid JSON (no markdown), English keys, in this shape:\\n' + '{\\\"score\\\": number 0-100, \\\"classification\\\": \\\"High\\\"|\\\"Medium\\\"|\\\"Low\\\", \\\"reason\\\": string, \\\"skills\\\": string[], \\\"next_step\\\": string}\\n' + 'Write reason and next_step in Brazilian Portuguese. Keep classification exactly as High, Medium or Low. Criteria: relevant experience, clarity, apparent seniority, alignment with the job title.' }] }], generationConfig: { temperature: 0.2, responseMimeType: 'application/json' } }) }}",
+        "simplify": true,
+        "jsonOutput": true,
         "options": {
-          "timeout": 30000
+          "systemMessage": "You are an HR screening assistant. Score how well the candidate fits the job. Output ONLY valid JSON with keys score, classification, reason, skills, next_step.",
+          "temperature": 0.2,
+          "maxOutputTokens": 1024
         }
       },
       "id": "http-gemini-001",
       "name": "Gemini Classificar",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
       "position": [
         960,
         300
       ],
-      "onError": "continueRegularOutput",
-      "continueOnFail": true
+      "credentials": {
+        "googlePalmApi": {
+          "id": "4BzjviP9DWtFMYM9",
+          "name": "Google Gemini API"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 15000,
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
-        "jsCode": "const ctx = $('Contexto Candidato').item.json;\nconst raw = $input.first().json;\n\nlet score = null;\nlet classification = 'Medium';\nlet reason = '';\nlet skills = [];\nlet nextStep = 'Revisão manual';\nlet iaOk = true;\nlet erroDetalhe = '';\n\ntry {\n  if (raw.error || raw.message?.includes?.('Error')) {\n    throw new Error(JSON.stringify(raw.error || raw.message || raw));\n  }\n  const text =\n    raw.candidates?.[0]?.content?.parts?.[0]?.text ??\n    raw.text ??\n    null;\n  if (!text) throw new Error('Empty Gemini response');\n  const cleaned = String(text).replace(/```json/gi, '').replace(/```/g, '').trim();\n  const parsed = JSON.parse(cleaned);\n  score = Number(parsed.score);\n  classification = parsed.classification || 'Medium';\n  reason = parsed.reason || '';\n  skills = parsed.skills || [];\n  nextStep = parsed.next_step || nextStep;\n  if (Number.isNaN(score)) throw new Error('Invalid score');\n} catch (e) {\n  iaOk = false;\n  erroDetalhe = String(e.message || e);\n  score = null;\n  classification = 'Medium';\n  reason = 'Falha da IA - encaminhado para revisão humana';\n  nextStep = 'Revisão manual HITL';\n}\n\nconst scoreHitlMin = Number($env.SCORE_HITL_MINIMO || 50);\nconst precisaHitl = !iaOk || (score !== null && score >= scoreHitlMin);\n\nconst baseId = String($env.AIRTABLE_BASE_ID || 'app32RqD9lvG8Sb0J');\nconst tableId = String($env.AIRTABLE_TABLE_ID || 'tblbzeyF946ZBbVSJ');\nconst recordId = String(ctx.airtable_id || ctx.id || '');\nconst recordUrl = 'https://airtable.com/' + baseId + '/' + tableId + '/' + recordId;\nconst webhookBase = String($env.WEBHOOK_URL || 'http://localhost:5678/').replace(/\\/$/, '');\nconst approveUrl = webhookBase + '/webhook/hitl-decisao?recordId=' + encodeURIComponent(recordId) + '&decision=approve';\nconst rejectUrl = webhookBase + '/webhook/hitl-decisao?recordId=' + encodeURIComponent(recordId) + '&decision=reject';\n\nreturn [{\n  json: {\n    ...ctx,\n    record_url: recordUrl,\n    approve_url: approveUrl,\n    reject_url: rejectUrl,\n    score,\n    classification,\n    motivo_ia: reason,\n    ai_reason: reason,\n    skills_extraidas: Array.isArray(skills) ? skills.join(', ') : String(skills),\n    extracted_skills: Array.isArray(skills) ? skills.join(', ') : String(skills),\n    proximo_passo_sugerido: nextStep,\n    suggested_next_step: nextStep,\n    ia_ok: iaOk,\n    erro_detalhe: erroDetalhe,\n    precisa_hitl: precisaHitl,\n    score_hitl_minimo: scoreHitlMin\n  }\n}];\n"
+        "jsCode": "const ctx = $('Contexto Candidato').item.json;\r\nconst raw = $input.first().json;\r\n\r\nlet score = null;\r\nlet classification = 'Medium';\r\nlet reason = '';\r\nlet skills = [];\r\nlet nextStep = 'Revisão manual';\r\nlet iaOk = true;\r\nlet erroDetalhe = '';\r\n\r\nfunction looksLikeRateLimit(v) {\r\n  const s = typeof v === 'string' ? v : JSON.stringify(v ?? '');\r\n  return /\\b429\\b|RESOURCE_EXHAUSTED|rate.?limit|quota|Try spacing your requests/i.test(s);\r\n}\r\n\r\nfunction extractText(obj) {\r\n  if (obj == null) return null;\r\n  if (typeof obj === 'string') return obj;\r\n\r\n  // Native Gemini message content wrapper: { content: { parts: [{ text }], role } }\r\n  const partText =\r\n    obj.content?.parts?.[0]?.text ??\r\n    obj.candidates?.[0]?.content?.parts?.[0]?.text ??\r\n    obj.parts?.[0]?.text;\r\n  if (partText != null) return partText;\r\n\r\n  // simplify/jsonOutput may return parsed object under content/text\r\n  if (obj.content != null && typeof obj.content === 'object' && !Array.isArray(obj.content)) {\r\n    if (obj.content.score != null || obj.content.classification != null) return obj.content;\r\n  }\r\n  if (typeof obj.content === 'string') return obj.content;\r\n  if (obj.text != null) return obj.text;\r\n  if (obj.output != null) return obj.output;\r\n  if (typeof obj.message === 'string') return obj.message;\r\n  if (obj.score != null || obj.classification != null || obj.reason != null) return obj;\r\n  if (obj.data) return extractText(obj.data);\r\n  if (obj.json) return extractText(obj.json);\r\n  return null;\r\n}\r\n\r\nfunction parsePayload(textOrObj) {\r\n  if (textOrObj && typeof textOrObj === 'object' && !Array.isArray(textOrObj)) {\r\n    return textOrObj;\r\n  }\r\n  let cleaned = String(textOrObj ?? '')\r\n    .replace(/```json/gi, '')\r\n    .replace(/```/g, '')\r\n    .trim();\r\n  if (cleaned && cleaned[0] !== '{') {\r\n    const m = cleaned.match(/\\{[\\s\\S]*\\}/);\r\n    if (m) cleaned = m[0];\r\n  }\r\n  return JSON.parse(cleaned);\r\n}\r\n\r\ntry {\r\n  if (raw.error || raw.name === 'NodeApiError' || raw.name === 'AxiosError' || looksLikeRateLimit(raw)) {\r\n    throw new Error(\r\n      JSON.stringify(raw.error || { message: raw.message, status: raw.status, name: raw.name }),\r\n    );\r\n  }\r\n  if (\r\n    typeof raw.message === 'string' &&\r\n    /error|failed|429/i.test(raw.message) &&\r\n    raw.score == null &&\r\n    !raw.candidates &&\r\n    !raw.content\r\n  ) {\r\n    throw new Error(raw.message);\r\n  }\r\n\r\n  const extracted = extractText(raw);\r\n  if (extracted == null || extracted === '') throw new Error('Empty Gemini response');\r\n\r\n  const parsed = parsePayload(extracted);\r\n  score = Number(parsed.score);\r\n  classification = parsed.classification || 'Medium';\r\n  reason = parsed.reason || parsed.ai_reason || '';\r\n  skills = parsed.skills || parsed.extracted_skills || [];\r\n  nextStep = parsed.next_step || parsed.suggested_next_step || nextStep;\r\n  if (Number.isNaN(score)) {\r\n    throw new Error('Invalid score from: ' + JSON.stringify(parsed).slice(0, 200));\r\n  }\r\n  if (!['High', 'Medium', 'Low'].includes(classification)) {\r\n    const c = String(classification).toLowerCase();\r\n    if (c.includes('high') || c.includes('alta')) classification = 'High';\r\n    else if (c.includes('low') || c.includes('baixa')) classification = 'Low';\r\n    else classification = 'Medium';\r\n  }\r\n} catch (e) {\r\n  iaOk = false;\r\n  erroDetalhe = String(e.message || e).slice(0, 1500);\r\n  score = null;\r\n  classification = 'Medium';\r\n  reason = 'Falha da IA - encaminhado para revisão humana';\r\n  nextStep = 'Revisão manual HITL';\r\n}\r\n\r\nconst scoreHitlMin = Number($env.SCORE_HITL_MINIMO || 50);\r\nconst precisaHitl = !iaOk || (score !== null && score >= scoreHitlMin);\r\n\r\nconst baseId = String($env.AIRTABLE_BASE_ID || 'app32RqD9lvG8Sb0J');\r\nconst tableId = String($env.AIRTABLE_TABLE_ID || 'tblbzeyF946ZBbVSJ');\r\nconst recordId = String(ctx.airtable_id || ctx.id || '');\r\nconst recordUrl = 'https://airtable.com/' + baseId + '/' + tableId + '/' + recordId;\r\nconst webhookBase = String($env.WEBHOOK_URL || 'http://localhost:5678/').replace(/\\/$/, '');\r\nconst approveUrl =\r\n  webhookBase + '/webhook/hitl-decisao?recordId=' + encodeURIComponent(recordId) + '&decision=approve';\r\nconst rejectUrl =\r\n  webhookBase + '/webhook/hitl-decisao?recordId=' + encodeURIComponent(recordId) + '&decision=reject';\r\n\r\nreturn [\r\n  {\r\n    json: {\r\n      ...ctx,\r\n      record_url: recordUrl,\r\n      approve_url: approveUrl,\r\n      reject_url: rejectUrl,\r\n      score,\r\n      classification,\r\n      motivo_ia: reason,\r\n      ai_reason: reason,\r\n      skills_extraidas: Array.isArray(skills) ? skills.join(', ') : String(skills),\r\n      extracted_skills: Array.isArray(skills) ? skills.join(', ') : String(skills),\r\n      proximo_passo_sugerido: nextStep,\r\n      suggested_next_step: nextStep,\r\n      ia_ok: iaOk,\r\n      erro_detalhe: erroDetalhe,\r\n      precisa_hitl: precisaHitl,\r\n      score_hitl_minimo: scoreHitlMin,\r\n    },\r\n  },\r\n];\r\n"
       },
       "id": "code-parse-001",
       "name": "Parse Resultado IA",
@@ -373,7 +386,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const input = $input.first().json;\nconst q = input.query ?? {};\nconst body = input.body ?? {};\nconst recordId = String(\n  q.recordId || q.record_id || body.recordId || body.record_id || input.recordId || ''\n).trim();\nconst decision = String(\n  q.decision || body.decision || input.decision || ''\n).toLowerCase().trim();\n\nconst aprovado = ['approve', 'aprovado', 'approved'].includes(decision);\nconst reprovado = ['reject', 'reprovado', 'rejected'].includes(decision);\n\nif (!recordId) {\n  return [{ json: { ok: false, error: 'recordId obrigatório', recordId: '', hitl_aprovado: false, decision: '' } }];\n}\nif (!aprovado && !reprovado) {\n  return [{ json: { ok: false, error: 'decision inválida (use approve|reject)', recordId, hitl_aprovado: false, decision } }];\n}\n\nreturn [{\n  json: {\n    ok: true,\n    recordId,\n    airtable_id: recordId,\n    decision: aprovado ? 'approve' : 'reject',\n    hitl_aprovado: aprovado,\n    hitl_raw: decision\n  }\n}];"
+        "jsCode": "const input = $input.first().json;\nconst q = input.query ?? {};\nconst body = input.body ?? {};\nconst headers = input.headers ?? {};\nconst ua = String(headers['user-agent'] || headers['User-Agent'] || '').toLowerCase();\nconst recordId = String(\n  q.recordId || q.record_id || body.recordId || body.record_id || input.recordId || ''\n).trim();\nconst decision = String(\n  q.decision || body.decision || input.decision || ''\n).toLowerCase().trim();\nconst confirm = String(q.confirm || body.confirm || '').toLowerCase().trim();\nconst confirmed = ['1', 'true', 'yes', 'sim'].includes(confirm);\n\nconst aprovado = ['approve', 'aprovado', 'approved'].includes(decision);\nconst reprovado = ['reject', 'reprovado', 'rejected'].includes(decision);\n\nif (!recordId) {\n  return [{ json: { ok: false, needs_confirm: false, error: 'recordId obrigatório', recordId: '', hitl_aprovado: false, decision: '' } }];\n}\nif (!aprovado && !reprovado) {\n  return [{ json: { ok: false, needs_confirm: false, error: 'decision inválida (use approve|reject)', recordId, hitl_aprovado: false, decision } }];\n}\n\nconst base = String($env.WEBHOOK_URL || 'http://localhost:5678/').replace(/\\/$/, '');\nconst decisionNorm = aprovado ? 'approve' : 'reject';\nconst label = aprovado ? 'Aprovar' : 'Reprovar';\nconst confirmUrl = `${base}/webhook/hitl-decisao?recordId=${encodeURIComponent(recordId)}&decision=${decisionNorm}&confirm=1`;\n\n// Slack link unfurl hits GET without confirm — show confirmation page instead of deciding.\nconst isSlackUnfurl = ua.includes('slackbot') || ua.includes('slack-imgproxy') || ua.includes('slack-linkexpanding');\nif (!confirmed || isSlackUnfurl) {\n  return [{\n    json: {\n      ok: false,\n      needs_confirm: true,\n      error: 'confirm_required',\n      recordId,\n      decision: decisionNorm,\n      hitl_aprovado: aprovado,\n      confirm_url: confirmUrl,\n      label\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    ok: true,\n    needs_confirm: false,\n    recordId,\n    airtable_id: recordId,\n    decision: decisionNorm,\n    hitl_aprovado: aprovado,\n    hitl_raw: decision\n  }\n}];"
       },
       "id": "code-hitl-params-001",
       "name": "Parse Parametros HITL",
@@ -419,9 +432,9 @@
     {
       "parameters": {
         "respondWith": "text",
-        "responseBody": "=<html><body style=\"font-family:sans-serif;padding:2rem\"><h1>Pedido inválido</h1><p>{{ $json.error || 'Parâmetros inválidos' }}</p><p>Use os links Aprovar/Reprovar do Slack.</p></body></html>",
+        "responseBody": "={{ $json.needs_confirm ? (`<html><body style=\"font-family:sans-serif;padding:2rem;max-width:32rem\"><h1>Confirmar decisão</h1><p>Você escolheu <strong>${$json.label}</strong> para o candidato <code>${$json.recordId}</code>.</p><p><a href=\"${$json.confirm_url}\" style=\"display:inline-block;padding:0.75rem 1.25rem;background:#111;color:#fff;text-decoration:none;border-radius:8px\">Confirmar ${$json.label}</a></p><p style=\"color:#666;font-size:0.9rem\">Essa etapa evita aprovação automática pelo preview do Slack.</p></body></html>`) : (`<html><body style=\"font-family:sans-serif;padding:2rem\"><h1>Pedido inválido</h1><p>${$json.error || 'Parâmetros inválidos'}</p><p>Use os links Aprovar/Reprovar do Slack.</p></body></html>`) }}",
         "options": {
-          "responseCode": 400,
+          "responseCode": 200,
           "responseHeaders": {
             "entries": [
               {

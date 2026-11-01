@@ -488,13 +488,14 @@ pre {
 
 <p>
   O fluxo técnico percorre as etapas a seguir. Primeiro, o webhook do Tally chega
-  ao n8n. Em seguida, o payload é normalizado. O registro é criado no Airtable. Uma
-  requisição HTTP chama o Gemini e o resultado é interpretado como JSON. Um desvio
-  condicional escolhe entre rejeição automática e fila de supervisão. No
-  Human-in-the-Loop, o Slack recebe a mensagem com links Aprovar e Reprovar
-  apontando para <code>WEBHOOK_URL/webhook/hitl-decisao</code>; a execução de
-  triagem encerra. Quando o recrutador clica, o webhook de decisão atualiza o
-  Airtable e, se aprovado, dispara o Gmail.
+  ao n8n. Em seguida, o payload é normalizado. O registro é criado no Airtable. A
+  classificação usa o nó nativo Google Gemini do n8n (não uma chamada HTTP
+  manual) e o resultado é interpretado como JSON. Um desvio condicional escolhe
+  entre rejeição automática e fila de supervisão. No Human-in-the-Loop, o Slack
+  recebe a mensagem com links Aprovar e Reprovar apontando para
+  <code>WEBHOOK_URL/webhook/hitl-decisao</code>; a execução de triagem encerra.
+  Quando o recrutador clica, o webhook de decisão atualiza o Airtable e, se
+  aprovado, dispara o Gmail.
 </p>
 
 <figure>
@@ -522,11 +523,12 @@ pre {
 
 <p>
   As integrações realizadas são: Tally para n8n por webhook; n8n para Airtable em
-  operações de criação e atualização; n8n para Gemini por HTTP; n8n para Slack na
-  notificação de supervisão; n8n para Gmail na comunicação pós-aprovação; e um
-  segundo webhook (<code>hitl-decisao</code>) para registrar a decisão humana. O
-  enunciado exige ao menos dois sistemas externos; a solução excede esse mínimo
-  de forma justificada pelo processo real de triagem.
+  operações de criação e atualização; n8n para Gemini pelo nó nativo Google
+  Gemini; n8n para Slack na notificação de supervisão; n8n para Gmail na
+  comunicação pós-aprovação; e um segundo webhook (<code>hitl-decisao</code>) para
+  registrar a decisão humana. O enunciado exige ao menos dois sistemas externos;
+  a solução excede esse mínimo de forma justificada pelo processo real de
+  triagem.
 </p>
 
 <h2>6.2 Modelo de dados</h2>
@@ -658,10 +660,13 @@ pre {
 <h2>8.3 Tratamento de falhas e limites do MVP</h2>
 
 <p>
-  O nó de chamada ao Gemini continua em falha controlada. O parse do JSON é
+  O nó nativo Google Gemini continua em falha controlada. O parse do JSON é
   defensivo. Em erro da Inteligência Artificial, o fluxo não rejeita
-  automaticamente: encaminha para Human-in-the-Loop com Error_Detail. Se o
-  Airtable estiver indisponível, a execução falha com registro no n8n. Se ninguém
+  automaticamente: encaminha para Human-in-the-Loop com Error_Detail (no Slack
+  isso aparece como falha da IA). Na faixa gratuita do AI Studio, a cota pode
+  devolver HTTP 429; Google One não eleva essa cota de API. Mitigações práticas:
+  retries no nó, aguardar a janela da cota e rodar de novo. Se o Airtable
+  estiver indisponível, a execução falha com registro no n8n. Se ninguém
   responder no Slack, a candidatura permanece em Awaiting_HITL até o clique; a
   execução da triagem já terminou e a decisão chega pelo webhook separado. Sem
   túnel, o Tally e os links do Slack não alcançam o n8n em localhost, condição

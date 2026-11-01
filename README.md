@@ -1,6 +1,6 @@
 # Triagem Inteligente de Candidaturas RH
 
-Automação low-code de triagem de candidaturas: formulário no **Tally**, orquestração no **n8n** (Docker Compose), persistência no **Airtable**, classificação com **Gemini**, decisão humana no **Slack** (links Aprovar/Reprovar) e e-mail ao candidato só depois, via **Gmail**.
+Automação low-code de triagem de candidaturas: formulário no **Tally**, orquestração no **n8n** (Docker Compose), persistência no **Airtable**, classificação com o nó nativo **Google Gemini** do n8n (em vez de HTTP Request cru), decisão humana no **Slack** (links Aprovar/Reprovar) e e-mail ao candidato só depois, via **Gmail**.
 
 ## 📋 Sumário
 
@@ -105,6 +105,8 @@ Use o form Tally (ou o payload [`n8n/payload-teste-tally.json`](n8n/payload-test
 | Perfil bom | Resumo alinhado + `cv-forte-fullstack.pdf` | Slack → Aprovar → Gmail + `Approved` |
 | Perfil fraco | Texto genérico + `cv-fraco-fullstack.pdf` | `Auto_Rejected`, sem convite |
 | IA fora | `GEMINI_API_KEY` inválida | HITL com `Error` / `Error_Detail` |
+
+A chave do Gemini vem do AI Studio na faixa gratuita: em rajadas dá para ver HTTP 429 (cota). Isso cai no mesmo fallback de falha da IA (HITL no Slack). Google One não aumenta essa cota de API; espere um pouco e rode de novo.
 
 ## 🤝 HITL
 

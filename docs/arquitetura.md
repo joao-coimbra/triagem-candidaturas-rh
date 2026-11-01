@@ -65,13 +65,13 @@ A orquestração permanece no n8n em edição Community, executada via Docker pa
 
 ### 5.2 Etapas do fluxo
 
-O fluxo técnico percorre as etapas principais a seguir. O webhook do Tally chega ao n8n. O payload é normalizado. O registro é criado no Airtable, com campo Resume (Attachment) quando o PDF está disponível. Uma requisição HTTP chama o Gemini e o resultado é interpretado como JSON. Um desvio condicional escolhe entre rejeição automática e fila de supervisão. No Human-in-the-Loop, o Slack notifica e a triagem encerra; a decisão humana chega depois pelo webhook hitl-decisao, que atualiza o Airtable e, se aprovado, envia o Gmail. Evidências (prints do Tally, n8n, Airtable, Slack e Gmail) constam na parte teórica (`parte-teorica.html` / `Arquitetura-Triagem-RH.pdf`).
+O fluxo técnico percorre as etapas principais a seguir. O webhook do Tally chega ao n8n. O payload é normalizado. O registro é criado no Airtable, com campo Resume (Attachment) quando o PDF está disponível. A classificação usa o nó nativo Google Gemini do n8n (não HTTP Request cru) e o resultado é interpretado como JSON. Um desvio condicional escolhe entre rejeição automática e fila de supervisão. No Human-in-the-Loop, o Slack notifica e a triagem encerra; a decisão humana chega depois pelo webhook hitl-decisao, que atualiza o Airtable e, se aprovado, envia o Gmail. Evidências (prints do Tally, n8n, Airtable, Slack e Gmail) constam na parte teórica (`parte-teorica.html` / `Arquitetura-Triagem-RH.pdf`).
 
 ## 6 Sistemas, dados e contrato da IA
 
 ### 6.1 Integrações
 
-As integrações realizadas são: Tally para n8n por webhook; n8n para Airtable em operações de criação e atualização; n8n para Gemini por HTTP; n8n para Slack na notificação de supervisão; n8n para Gmail na comunicação pós-aprovação; e um segundo webhook (hitl-decisao) para registrar a decisão humana. O enunciado exige ao menos dois sistemas externos; a solução excede esse mínimo de forma justificada pelo processo real de triagem.
+As integrações realizadas são: Tally para n8n por webhook; n8n para Airtable em operações de criação e atualização; n8n para Gemini pelo nó nativo Google Gemini; n8n para Slack na notificação de supervisão; n8n para Gmail na comunicação pós-aprovação; e um segundo webhook (hitl-decisao) para registrar a decisão humana. O enunciado exige ao menos dois sistemas externos; a solução excede esse mínimo de forma justificada pelo processo real de triagem.
 
 ### 6.2 Modelo de dados
 
@@ -121,7 +121,7 @@ O caminho do webhook deve ser pouco óbvio. Credenciais ficam apenas na interfac
 
 ### 8.3 Tratamento de falhas e limites do MVP
 
-O nó de chamada ao Gemini continua em falha controlada. O parse do JSON é defensivo. Em erro da Inteligência Artificial, o fluxo não rejeita automaticamente: encaminha para Human-in-the-Loop com Error_Detail. Se o Airtable estiver indisponível, a execução falha com registro no n8n. Se ninguém responder no Slack, a candidatura permanece em Awaiting_HITL até o clique; a execução da triagem já terminou e a decisão chega pelo webhook separado. Sem túnel, o Tally e os links do Slack não alcançam o n8n em localhost, condição documentada no README.
+O nó nativo Google Gemini continua em falha controlada. O parse do JSON é defensivo. Em erro da Inteligência Artificial, o fluxo não rejeita automaticamente: encaminha para Human-in-the-Loop com Error_Detail (no Slack, falha da IA). Na faixa gratuita do AI Studio pode aparecer HTTP 429 por cota; Google One não aumenta essa cota de API. Mitigações: retries no nó, esperar a janela da cota e tentar de novo. Se o Airtable estiver indisponível, a execução falha com registro no n8n. Se ninguém responder no Slack, a candidatura permanece em Awaiting_HITL até o clique; a execução da triagem já terminou e a decisão chega pelo webhook separado. Sem túnel, o Tally e os links do Slack não alcançam o n8n em localhost, condição documentada no README.
 
 Fora do escopo do MVP estão o Google Calendar, um portal administrativo de Recursos Humanos e o OCR completo do PDF. A Inteligência Artificial prioriza o texto do Summary; o PDF permanece disponível para o humano no campo Resume (Attachment) do Airtable.
 

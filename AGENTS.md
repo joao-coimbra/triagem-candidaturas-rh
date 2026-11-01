@@ -25,3 +25,4 @@
 - Video pitch roteiro is not kept in the repo.
 - Assignment guidance allows n8n/Make-class tools; Power Platform is not required despite course module titles.
 - Local n8n is reachable for demos at `http://localhost:5678`; Tally webhooks need a tunnel (Cloudflare Tunnel or ngrok) from localhost.
+- Public GitHub remote is https://github.com/joao-coimbra/triagem-candidaturas-rh with default branch `main`.

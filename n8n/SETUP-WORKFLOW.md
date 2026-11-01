@@ -4,7 +4,7 @@
 1. Suba o n8n (`docker compose up -d` na raiz do projeto).
 2. Abra `http://localhost:5678`.
 3. **Workflows → Import from File** → selecione `triagem-candidaturas.json`.
-4. Religue as credenciais (Airtable, Slack, Gmail) nos nós marcados.
+4. Religue as credenciais (Airtable, Slack, Gmail, **Google Gemini API**) nos nós marcados.
 
 ## Variáveis de ambiente recomendadas
 No Docker / host, defina pelo menos:
@@ -12,7 +12,7 @@ No Docker / host, defina pelo menos:
 - `AIRTABLE_BASE_ID`
 - `AIRTABLE_TABLE_ID` (id da tabela Candidates; o workflow usa `$env.AIRTABLE_TABLE_ID`)
 - `SLACK_CHANNEL_RECRUTAMENTO` (ex.: `#rh-triagem`)
-- `GEMINI_MODEL` (default `gemini-2.5-flash`)
+- `GEMINI_MODEL` (default `gemini-2.5-flash-lite`; used as fallback label; native node pins `models/gemini-2.5-flash-lite`)
 - `SCORE_HITL_MINIMO` (default `50`)
 - `WEBHOOK_URL` (URL pública se usar tunnel; também base dos links Aprovar/Reprovar)
 - `N8N_BLOCK_ENV_ACCESS_IN_NODE=false` (necessário para `$env.AIRTABLE_*` / Gemini no workflow)
@@ -25,7 +25,7 @@ No n8n: **Settings → Variables** ou env do container.
 | Airtable PAT | airtable.com → Developer hub → Personal access tokens (scopes: `data.records:read/write`, `schema.bases:read/write`) |
 | Slack Bot | api.slack.com → Create App → `chat:write` + `channels:read`/`groups:read`; no canal privado `#rh-triagem` rode `/invite @hr_screening_bot` |
 | Gmail OAuth2 | Google Cloud Console → OAuth client → n8n Gmail credential |
-| Gemini | aistudio.google.com → API key (via query `key` no HTTP Request) |
+| Google Gemini API (`googlePalmApi`) | aistudio.google.com → API key → n8n credential **Google Gemini(PaLM) Api** on the **Gemini Classificar** node |
 
 ## Tally → Webhook
 1. Ative o workflow.
@@ -38,7 +38,7 @@ A triagem **não espera** no n8n. Depois do Slack, a execução termina; a decis
 
 1. No Slack, abra o Airtable se quiser revisar o currículo.
 2. Clique em **Aprovar** ou **Reprovar** na própria mensagem (não precisa abrir o n8n).
-3. Os links usam `WEBHOOK_URL` + `/webhook/hitl-decisao?recordId=...&decision=approve|reject`.
+3. Os links usam `WEBHOOK_URL` + `/webhook/hitl-decisao?recordId=...&decision=approve|reject`. O primeiro clique abre uma página de **Confirmar** (evita o preview do Slack aprovar sozinho); no segundo clique (`confirm=1`) a decisão vale.
 4. O webhook atualiza o Airtable (`Approved` / `HITL_Rejected`) e, se aprovado, dispara o Gmail.
 5. O browser mostra “Decisão registrada: aprovado/reprovado”.
 
